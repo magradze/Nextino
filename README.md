@@ -110,11 +110,11 @@ Detailed documentation is under development.
 
 ## 🏛️ Our Philosophy
 
-Nextino is guided by a strong architectural vision. To understand the principles behind the framework, please read **[The Nextino Manifesto](MANIFESTO)**.
+Nextino is guided by a strong architectural vision. To understand the principles behind the framework, please read **[The Nextino Manifesto](MANIFESTO.md)**.
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read our **[Contributing Guide](CONTRIBUTING)** to get started.
+Contributions are welcome! Please read our **[Contributing Guide](CONTRIBUTING.md)** to get started.
 
 ---
 
