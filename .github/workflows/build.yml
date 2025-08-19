@@ -1,0 +1,57 @@
+# This is the name of the GitHub Actions workflow.
+name: PlatformIO CI
+
+# Controls when the workflow will run.
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch.
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel.
+jobs:
+  # This workflow contains a single job called "build".
+  build:
+    # The type of runner that the job will run on.
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job.
+    steps:
+      # Step 1: Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # We need to check out submodules if your examples use them.
+          submodules: 'recursive'
+
+      # Step 2: Set up Python, which is required by PlatformIO.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      # Step 3: Install PlatformIO Core.
+      - name: Install PlatformIO
+        run: pip install -U platformio
+
+      # Step 4: Install ESP32 platform dependencies for Arduino.
+      - name: Install ESP32 platform
+        run: pio pkg install -p "espressif32"
+
+      # Step 5: Build the example project.
+      # This is the main step. We navigate to the example directory and run `pio run`.
+      - name: Build the Blink Demo
+        run: |
+          cd examples/01_Blink
+          pio run
+
+      # (Optional) Step 6: Build another example project.
+      # You can add more steps like this for each example you want to test.
+      # - name: Build the WiFi Demo
+      #   run: |
+      #     cd examples/WifiDemo
+      #     pio run

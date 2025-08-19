@@ -1,0 +1,33 @@
+{
+  "name": "Nextino",
+  "version": "0.1.0",
+  "description": "A structured, scalable, and modern C++ framework for Arduino, ESP32, STM32, and beyond.",
+  "keywords": "framework, iot, embedded, architecture, arduino, esp32, stm32, modular, scheduler, eventbus",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/magradze/Nextino.git"
+  },
+  "authors": [
+    {
+      "name": "Giorgi Magradze",
+      "url": "https://github.com/magradze",
+      "maintainer": true
+    }
+  ],
+  "license": "MIT",
+  "frameworks": ["arduino"],
+  "platforms": ["espressif32", "espressif8266", "stm32", "atmelavr"],
+  "dependencies": {
+    "bblanchon/ArduinoJson": "^7.0.0"
+  },
+  "export": {
+    "exclude": [
+      "docs",
+      "extras",
+      ".github"
+    ]
+  },
+  "build": {
+    "extra_script": "extras/scripts/bootstrap.py"
+  }
+}

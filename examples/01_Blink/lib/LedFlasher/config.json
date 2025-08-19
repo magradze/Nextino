@@ -1,0 +1,6 @@
+{
+  "type": "LedModule",
+  "config": {
+    "pin": 2
+  }
+}
