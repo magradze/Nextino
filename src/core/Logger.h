@@ -30,6 +30,12 @@ enum class LogLevel {
     Debug    /**< Detailed messages for debugging. */
 };
 
+// Enum for future output types (e.g., File, MQTT).
+enum class LogOutputType
+{
+    Serial
+};
+
 /**
  * @class Logger
  * @brief A singleton class for handling all log output.
@@ -43,11 +49,11 @@ public:
     static Logger& getInstance();
 
     /**
-     * @brief Initializes the logger and the underlying Serial port.
-     * @details This should be the very first function called in `setup()`.
-     * @param level The maximum log level to display. Messages with a higher level will be ignored.
+     * @brief Initializes the logger.
+     * @param level The maximum log level to display.
+     * @param outputType The destination for the log output (currently only Serial).
      */
-    void begin(LogLevel level = LogLevel::Info);
+    void begin(LogLevel level = LogLevel::Info, LogOutputType outputType = LogOutputType::Serial);
 
     /**
      * @brief Logs a message.
@@ -72,6 +78,7 @@ public:
 private:
     Logger() : currentLevel(LogLevel::None) {}
     LogLevel currentLevel;
+    LogOutputType outputType;
 };
 
 // --- Global Logging Macros ---
