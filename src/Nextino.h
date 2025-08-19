@@ -22,8 +22,6 @@
 #include "core/SystemManager.h"
 #include "core/Scheduler.h"
 #include "core/Logger.h"
-#include "core/EventBus.h"
-#include "core/ServiceLocator.h"
 #include "core/ModuleFactory.h"
 
 /**
@@ -39,25 +37,7 @@ inline SystemManager& NextinoSystem() { return SystemManager::getInstance(); }
 inline Scheduler& NextinoScheduler() { return Scheduler::getInstance(); }
 
 /**
- * @brief Provides access to the global EventBus instance.
- * @return A reference to the EventBus singleton.
- */
-inline EventBus& NextinoEvent() { return EventBus::getInstance(); }
-
-/**
- * @brief Provides access to the global ServiceLocator instance.
- * @return A reference to the ServiceLocator singleton.
- */
-inline ServiceLocator& NextinoServices() { return ServiceLocator::getInstance(); }
-
-/**
  * @brief Provides access to the global ModuleFactory instance.
  * @return A reference to the ModuleFactory singleton.
  */
-inline ModuleFactory& NextinoFactory() { return ModuleFactory::getInstance(); }
-
-/**
- * @brief Provides access to the global ResourceManager instance.
- * @return A reference to the ResourceManager singleton.
- */
-inline ResourceManager& NextinoResources() { return ResourceManager::getInstance(); }
+inline ModuleFactory &NextinoFactory() { return ModuleFactory::getInstance(); }
