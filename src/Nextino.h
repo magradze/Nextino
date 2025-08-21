@@ -23,6 +23,7 @@
 #include "core/Scheduler.h"
 #include "core/Logger.h"
 #include "core/ModuleFactory.h"
+#include "core/ResourceManager.h"
 
 /**
  * @brief Provides access to the global SystemManager instance.
@@ -41,3 +42,9 @@ inline Scheduler& NextinoScheduler() { return Scheduler::getInstance(); }
  * @return A reference to the ModuleFactory singleton.
  */
 inline ModuleFactory &NextinoFactory() { return ModuleFactory::getInstance(); }
+
+/**
+ * @brief Provides access to the global ResourceManager instance.
+ * @return A reference to the ResourceManager singleton.
+ */
+inline ResourceManager &NextinoResource() { return ResourceManager::getInstance(); }
