@@ -1,0 +1,8 @@
+{
+  "label": "Conventions & Style Guides",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "description": "Learn about the coding style, naming conventions, and project structure that keep the Nextino framework consistent and maintainable."
+  }
+}

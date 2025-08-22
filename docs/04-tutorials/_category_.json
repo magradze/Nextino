@@ -1,0 +1,8 @@
+{
+  "label": "Tutorials",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Follow these step-by-step guides to master Nextino's features."
+  }
+}

@@ -12,12 +12,12 @@ export default function Home(): JSX.Element {
       <header className="hero hero--primary">
         <div className="container text--center">
           <img src="img/NEXT.ino.png" alt="Nextino Logo" width="180" />
-          <h1 className="hero__title">Nextino Framework (v0.1.0)</h1>
+          <h1 className="hero__title">Nextino Framework</h1>
           <p className="hero__subtitle">
             The Next Step for Arduino — structured, scalable, modern.
           </p>
           <div className="buttons">
-            <Link className="button button--secondary button--lg margin--sm" to="/docs/intro">
+            <Link className="button button--secondary button--lg margin--sm" to="/getting-started/what-is-nextino">
               🚀 Get Started
             </Link>
             <Link className="button button--outline button--lg margin--sm" to="https://github.com/magradze/Nextino">

@@ -103,7 +103,7 @@ const config: Config = {
           title: 'Docs',
           items: [
             {
-              label: 'Tutorial',
+              label: 'Getting Started',
               to: '/getting-started/what-is-nextino',
             },
           ],
