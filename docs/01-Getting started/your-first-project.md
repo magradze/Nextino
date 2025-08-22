@@ -200,4 +200,4 @@ Your device will restart, and because the Serial Monitor is already open and lis
 
 You've now experienced the power of Nextino's core philosophy. Let's dive deeper into the architecture.
 
-➡️ **[Core Concepts](../core-concepts/architecture-overview.md)**
+➡️ **[Core Concepts](/core-concepts/architecture-overview)**

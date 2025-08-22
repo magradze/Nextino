@@ -94,4 +94,4 @@ By choosing the right pattern for the job, you can build complex applications th
 
 You've now learned about the core architectural concepts of Nextino. It's time to get your hands dirty and build your first module!
 
-➡️ **[Tutorial: Creating a Custom Module](../tutorials/creating-a-custom-module.md)**
+➡️ **[Tutorial: Creating a Custom Module](/tutorials/creating-a-custom-module)**

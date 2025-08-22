@@ -53,4 +53,4 @@ Think of it as **Next.js for Arduino**: the same familiar ecosystem, but moderni
 
 Ready to see it in action? Let's move on to the next step:
 
-➡️ **[Installation](./installation.md)**
+➡️ **[Installation](./installation)**

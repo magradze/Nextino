@@ -2,32 +2,13 @@
   <img src="assets/NEXT.ino.png" alt="Nextino Logo" width="200"/>
 </p>
 
-# Nextino Framework (v0.1.0)
+# Nextino Framework
 
 **Nextino: The Next Step for Arduino. A structured, scalable, and modern C++ framework for Arduino, ESP32, STM32, and beyond.**
 
 [![PlatformIO CI](https://github.com/magradze/Nextino/actions/workflows/build.yml/badge.svg)](https://github.com/magradze/Nextino/actions)
+[![Website](https://img.shields.io/badge/Docs-Website-blue.svg)](https://magradze.github.io/Nextino/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-## 🎉 The Story Behind Nextino
-
-Nextino's first **public release** coincides with a very special day for me — **my son's birthday**.  
-This isn't just a technical milestone; it's a personal one.
-
----
-
-On this day, I watched my child grow one year older while also giving life to a framework that I hope will empower countless developers around the world.  
-Just like my son, Nextino is **just starting its journey**, full of potential and possibilities.
-
----
-
-Whenever I look back at this release, I'll remember that **Nextino was "born" on the same day as my son** — a symbolic reminder that creation, in any form, is always meaningful.  
-
-I hope Nextino inspires you to **build, explore, and create** — just as much as my son inspires me every day.  
-
----
-
-> "Two birthdays on the same day: one of my son, one of my creation. Both equally precious." 🎈
 
 ---
 
@@ -37,86 +18,80 @@ This framework is built for developers who love the simplicity of the Arduino ec
 
 ---
 
-## ✨ Key Features (v0.1.0)
+## ✨ Key Features
 
-* **Modular Architecture:** Build your application from independent, reusable modules (`BaseModule`).
-* **Plug-and-Play:** Add modules to your project's `lib` folder, and Nextino's build script automatically discovers and configures them. Your `main.cpp` stays clean!
-* **Configuration-Driven:** Modules are configured via `config.json` files, separating logic from configuration.
-* **Non-Blocking Scheduler:** Run periodic tasks efficiently without using `delay()`.
-* **Professional Logging:** A built-in, colored, and leveled logger that makes debugging a pleasure.
-* **Clean Core:** A minimal core featuring a `SystemManager`, `ModuleFactory`, and `Scheduler`.
-
----
-
-## ❓ Why Nextino?
-
-Arduino made embedded development accessible for everyone, but as projects grow, `.ino` files and spaghetti `loop()` logic quickly become unmanageable.  
-
-Nextino solves this by providing:
-
-* A **clear structure** for scalable applications.  
-* **Automatic module discovery**, so you focus on logic, not boilerplate.  
-* A **professional development experience** while staying compatible with Arduino libraries and PlatformIO.  
-* A path to migrate from hobby projects → production-ready IoT solutions.  
-
-Think of it as **Next.js for Arduino**: the same ecosystem, but modernized, structured, and future-proof.  
-
----
-
-## 📦 Roadmap
-
-* [x] Core system (`SystemManager`, `ModuleFactory`, `Scheduler`)  
-* [x] Example projects (`01_Blink`)  
-* [ ] Config Manager with validation  
-* [ ] Async/Promise-based task handling  
-* [ ] More ready-to-use modules (WiFi, MQTT, Sensors)  
-* [ ] Advanced documentation and tutorials  
-
----
-
-## 🚀 Getting Started
-
-The best way to get started is to explore the example project:
-
-➡️ **[01_Blink Example](examples/01_Blink)**  
-
-This example demonstrates how to set up a PlatformIO project, add the `Nextino` framework and the `LedFlasher` module, and run a fully functional application with a minimal `main.cpp`.
-
-For a step-by-step guide, please see the **[Getting Started Tutorial](docs/tutorials/getting_started.md)**.
+* **🧩 Modular Architecture:** Build your application from independent, reusable modules (`BaseModule`).
+* **🔌 Plug-and-Play:** Add modules to your project's `lib` folder, and Nextino's build script **automatically discovers and configures them**. Your `main.cpp` stays clean!
+* **📜 Configuration-Driven:** Define your system's components and their parameters in `config.json` files. Change hardware without changing your application code.
+* **💬 Decoupled Communication:** Modules communicate safely using the built-in **`EventBus`** (for broadcasting) and **`ServiceLocator`** (for direct requests), eliminating tight coupling.
+* **⏱️ Advanced Scheduler:** Run periodic or one-shot tasks efficiently without using `delay()`. Tasks can be **dynamically cancelled** at runtime.
+* **🛡️ Hardware Safety:** The `ResourceManager` prevents hardware conflicts (e.g., two modules using the same pin) by locking resources like **GPIO, I2C, SPI, and UART** at startup.
+* **📝 Professional Logging:** A built-in, colored, and leveled logger that makes debugging a pleasure.
 
 ---
 
 ## 📚 Documentation
 
-Detailed documentation is under development.
+Our comprehensive documentation is the best place to start your journey with Nextino. It includes tutorials, core concept guides, and API references.
 
-* **[Core Concepts](docs/architecture/core_concepts.md)**
-* **[Creating Your First Module](docs/tutorials/creating_a_module.md)**
-
----
-
-## 🔄 Comparison
-
-| Feature              | Arduino (Classic) | ESP-IDF / STM HAL | **Nextino** |
-|----------------------|------------------|------------------|-------------|
-| Easy to start        | ✅                | ❌                | ✅ |
-| Modular architecture | ❌                | ⚠️ Manual         | ✅ |
-| Config-driven        | ❌                | ⚠️ CMake/Kconfig  | ✅ |
-| Scheduler            | ❌                | ✅ (FreeRTOS)     | ✅ (simplified) |
-| Logging              | ❌                | ✅                | ✅ |
-| Ecosystem            | Huge              | Large             | Inherits Arduino + custom modules |
+### ➡️ [Visit the Official Documentation Website](https://magradze.github.io/Nextino/)
 
 ---
 
-## 🏛️ Our Philosophy
+## 🚀 Getting Started
 
-Nextino is guided by a strong architectural vision. To understand the principles behind the framework, please read **[The Nextino Manifesto](MANIFESTO.md)**.
+Getting started with Nextino is a simple, three-step process:
+
+**1. Visit the Documentation:**
+Start with our **[Your First Project](https://magradze.github.io/Nextino/getting-started/your-first-project)** tutorial on the documentation site.
+
+**2. Add Nextino to Your Project:**
+In your `platformio.ini` file, add the Nextino repository to your `lib_deps`:
+
+```ini
+lib_deps =
+    https://github.com/magradze/Nextino.git
+```
+
+**3. Explore the Examples:**
+Check out the official **[examples directory](https://github.com/magradze/Nextino/tree/main/examples)** to see Nextino in action.
+
+---
+
+## ❓ Why Nextino?
+
+Arduino made embedded development accessible, but as projects grow, spaghetti `loop()` logic becomes unmanageable. Nextino solves this by providing:
+
+* A **clear structure** for scalable applications.
+* **Automatic module discovery**, so you focus on logic, not boilerplate.
+* A **professional development experience** while staying compatible with the Arduino ecosystem.
+* A path to migrate from hobby projects to production-ready IoT solutions.
+
+Think of it as **Next.js for Arduino**: the same ecosystem, but modernized, structured, and future-proof.
+
+---
+
+## 📦 Roadmap
+
+Curious about what's next for Nextino? We maintain a public roadmap to keep the community informed about our plans and priorities.
+
+➡️ **[View the Project Roadmap](https://github.com/magradze/Nextino/blob/main/roadmap.md)**
+
+---
+
+## 🎉 The Story Behind Nextino's First Release
+
+Nextino's first public release (`v0.1.0`) coincided with a very special day for me — **my son's birthday**. This isn't just a technical milestone; it's a personal one.
+
+On that day, I watched my child grow one year older while also giving life to a framework that I hope will empower countless developers. Just like my son, Nextino is **on a journey of growth**, full of potential and possibilities. This story is a reminder that creation, in any form, is always meaningful.
+
+> "Two birthdays on the same day: one of my son, one of my creation. Both equally precious." 🎈
+
+---
 
 ## 🤝 Contributing
 
 Contributions are welcome! Please read our **[Contributing Guide](CONTRIBUTING.md)** to get started.
-
----
 
 ## 📄 License
 

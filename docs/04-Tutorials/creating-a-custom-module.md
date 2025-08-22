@@ -37,6 +37,7 @@ lib/
 
 :::info File Organization Principle
 Nextino encourages separating code by responsibility to keep modules clean and maintainable:
+
 - **`ModuleName.cpp`**: This file should contain the constructor and the main `BaseModule` lifecycle methods (`init`, `start`, `loop`). It acts as the module's "orchestrator".
 - **`ModuleName_events.cpp`**: This file is ideal for the core logic, especially event handling or, as in this tutorial, the logic that *produces* events.
 - **`ModuleName_api.cpp` (Future)**: This file would contain the implementation for a `ServiceLocator` API.
@@ -178,4 +179,4 @@ The process remains the same. Add `ButtonReader` to your project's `lib_deps`, a
 
 Now that you have a module that produces events, let's see how another module can listen for them.
 
-➡️ **[Using the EventBus](./using-the-eventbus.md)**
+➡️ **[Using the EventBus](./using-the-eventbus)**

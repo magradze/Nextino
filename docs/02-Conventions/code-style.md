@@ -81,4 +81,4 @@ This document defines the official C++ coding style for the Nextino framework. A
 
 Now that we've established the basic style, let's define the specific naming conventions for different parts of the framework.
 
-➡️ **[Naming Conventions](./naming-conventions.md)**
+➡️ **[Naming Conventions](./naming-conventions)**

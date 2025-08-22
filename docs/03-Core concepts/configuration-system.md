@@ -116,4 +116,4 @@ MyModule::MyModule(const JsonObject& config) {
 
 Now that you know how modules are configured and created, let's explore the component that handles all the non-blocking magic.
 
-➡️ **[The Scheduler](./the-scheduler.md)**
+➡️ **[The Scheduler](./the-scheduler)**

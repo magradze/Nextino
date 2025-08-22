@@ -108,4 +108,4 @@ This document provides specific and detailed naming conventions for all major en
 
 With a clear naming system, let's define the standard file and directory structure for modules.
 
-➡️ **[Module Structure](./module-structure.md)**
+➡️ **[Module Structure](./module-structure)**

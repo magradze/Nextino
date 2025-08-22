@@ -159,4 +159,4 @@ You have successfully created a system where two modules communicate via events,
 
 Now that you've mastered module creation and communication, let's look at how to manage hardware resources safely.
 
-➡️ **[Using the ResourceManager](./using-the-resourcemanager.md)**
+➡️ **[Using the ResourceManager](./safe-hardware-access)**

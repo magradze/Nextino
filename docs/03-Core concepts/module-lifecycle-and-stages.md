@@ -110,4 +110,4 @@ void SensorModule::loop() {
 
 Now that you understand the lifecycle, let's look at the system that makes it all possible: the configuration.
 
-➡️ **[The Configuration System](./configuration-system.md)**
+➡️ **[The Configuration System](./configuration-system)**

@@ -91,4 +91,4 @@ The Nextino framework itself will be installed inside the hidden `.pio` director
 
 Now that you have the framework installed, it's time to build your first application!
 
-➡️ **[Your First Project](./your-first-project.md)**
+➡️ **[Your First Project](./your-first-project)**

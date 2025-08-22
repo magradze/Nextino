@@ -134,4 +134,4 @@ By embracing the Scheduler, you can build complex, multi-tasking applications th
 
 Now that you understand the core components, let's look at how they communicate.
 
-➡️ **[Communication Patterns](./communication-patterns.md)**
+➡️ **[Communication Patterns](./communication-patterns)**

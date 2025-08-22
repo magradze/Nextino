@@ -161,4 +161,4 @@ This unified structure makes the framework incredibly powerful and extensible. A
 
 Now that you understand how Nextino manages resources, let's look at how modules can communicate with each other.
 
-➡️ **[Communication Patterns](./communication-patterns.md)**
+➡️ **[Communication Patterns](./communication-patterns)**

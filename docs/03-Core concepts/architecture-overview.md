@@ -107,4 +107,4 @@ This automated process ensures that your `main.cpp` remains clean and decoupled 
 
 Now that you understand the high-level architecture, let's dive into the details of a module's lifecycle.
 
-➡️ **[The Lifecycle of a Module](./the-lifecycle-of-a-module.md)**
+➡️ **[The Lifecycle of a Module](./module-lifecycle-and-stages)**

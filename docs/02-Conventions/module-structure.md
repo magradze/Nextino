@@ -102,4 +102,4 @@ This structure is clean, logical, and fully automated. By following it, you ensu
 
 With the code and file structure defined, let's establish the rules for documenting our code.
 
-➡️ **[Documentation Style](./documentation-style.md)**
+➡️ **[Documentation Style](./documentation-style)**
