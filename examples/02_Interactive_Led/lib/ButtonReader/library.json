@@ -1,0 +1,7 @@
+{
+    "name": "ButtonReader",
+    "version": "1.0.0",
+    "description": "A non-blocking, debounced button reader module for Nextino.",
+    "keywords": "nextino-module, button, input",
+    "dependencies": { "Nextino": "*" }
+}

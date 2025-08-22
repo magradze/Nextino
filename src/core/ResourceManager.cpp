@@ -15,11 +15,9 @@
 #include "Logger.h"
 
 ResourceManager& ResourceManager::getInstance() {
-    static ResourceManager* instance = nullptr;
-    if (instance == nullptr) {
-        instance = new ResourceManager();
-    }
-    return *instance;
+    // Use the modern and thread-safe Meyers' Singleton pattern.
+    static ResourceManager instance;
+    return instance;
 }
 
 // Private helper function to select the correct map based on resource type.

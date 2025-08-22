@@ -1,0 +1,44 @@
+:root {
+  /* Nextino Primary Palette */
+  --ifm-color-primary: #9B5DE5;
+  --ifm-color-primary-dark: #894DCC;
+  --ifm-color-primary-darker: #7A44B8;
+  --ifm-color-primary-darkest: #5E3390;
+  --ifm-color-primary-light: #AE74E9;
+  --ifm-color-primary-lighter: #BA87EC;
+  --ifm-color-primary-lightest: #C89FF0;
+
+  /* Accent - Bright Magenta */
+  --ifm-color-accent: #F15BB5;
+
+  /* Code & UI */
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(155, 93, 229, 0.15);
+
+  /* Gradient utility (Purple → Cyan) */
+  --nextino-gradient: linear-gradient(90deg, #9B5DE5 0%, #00E5FF 100%);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #9B5DE5;
+  --ifm-color-primary-dark: #894DCC;
+  --ifm-color-primary-darker: #7A44B8;
+  --ifm-color-primary-darkest: #5E3390;
+  --ifm-color-primary-light: #AE74E9;
+  --ifm-color-primary-lighter: #BA87EC;
+  --ifm-color-primary-lightest: #C89FF0;
+
+  --ifm-color-accent: #F15BB5;
+
+  /* Background */
+  --ifm-background-color: #0D0D0D;
+  --ifm-footer-background-color: #121212;
+
+  --docusaurus-highlighted-code-line-bg: rgba(155, 93, 229, 0.3);
+
+  --nextino-gradient: linear-gradient(90deg, #9B5DE5 0%, #00E5FF 100%);
+}
+
+.navbar-logo {
+  padding: 4px 12px;
+}

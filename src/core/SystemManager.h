@@ -6,8 +6,8 @@
  *              initializing, and running all modules.
  *
  * @author      Giorgi Magradze
- * @date        2025-08-19
- * @version     0.1.0
+ * @date        2025-08-22
+ * @version     0.3.0
  *
  * @copyright   (c) 2025 Nextino. All rights reserved.
  * @license     MIT License
@@ -15,7 +15,9 @@
 
 #pragma once
 #include <vector>
-#include "../modules/BaseModule.h"
+
+// Forward declaration of BaseModule to avoid circular dependencies.
+class BaseModule;
 
 /**
  * @class SystemManager
@@ -23,35 +25,33 @@
  * @details This singleton class manages the collection of all modules and controls
  *          their lifecycle from initialization to the main operational loop.
  */
-class SystemManager {
+class SystemManager
+{
 public:
     /**
      * @brief Gets the singleton instance of the SystemManager.
      * @return A reference to the SystemManager.
      */
-    static SystemManager& getInstance();
-    
-    /**
-     * @brief Registers a module with the system.
-     * @details This method should be called for each module instance before `begin()` is called.
-     *          Typically, this is handled automatically when using a configuration-driven setup.
-     * @param module A pointer to the module instance to be registered.
-     */
-    void registerModule(BaseModule* module);
+    static SystemManager &getInstance();
 
     /**
-     * @brief Initializes and starts all registered modules.
-     * @details This method iterates through all registered modules, calling their `init()`
-     *          methods first, followed by their `start()` methods. This should be called
-     *          at the end of the main `setup()` function.
+     * @brief Registers a module with the system.
+     * @param module A pointer to the module instance to be registered.
      */
-    void begin();
+    void registerModule(BaseModule *module);
+
+    /**
+     * @brief Initializes and starts all modules based on the provided configuration.
+     * @details This method performs a multi-phase startup. If a critical error
+     *          (like a resource conflict) is detected, it will log the error
+     *          and enter a safe, non-operational state instead of halting.
+     * @param configJson A constant C-string containing the project's configuration.
+     */
+    void begin(const char *configJson);
 
     /**
      * @brief The main update loop for the entire system.
-     * @details This method must be called repeatedly in the main `loop()` function.
-     *          It is responsible for calling the `Scheduler::loop()` and the `loop()`
-     *          method of every registered module.
+     * @details Must be called repeatedly in the main `loop()` function.
      */
     void loop();
 
@@ -59,10 +59,8 @@ private:
     /**
      * @brief Private constructor to enforce the singleton pattern.
      */
-    SystemManager() {}
+    SystemManager() : _isInErrorState(false) {}
 
-    /**
-     * @brief A vector that stores pointers to all registered module instances.
-     */
-    std::vector<BaseModule*> modules;
+    std::vector<BaseModule *> _modules;
+    bool _isInErrorState; // Flag to indicate a critical startup failure.
 };

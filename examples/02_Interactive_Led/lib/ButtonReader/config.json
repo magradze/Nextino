@@ -1,0 +1,11 @@
+{
+  "type": "ButtonModule",
+  "config": {
+    "resource": {
+      "type": "gpio",
+      "pin": 12,
+      "mode": "input_pullup"
+    },
+    "long_press_ms": 1000
+  }
+}

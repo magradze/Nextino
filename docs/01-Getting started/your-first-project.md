@@ -179,6 +179,21 @@ Notice that `main.cpp` has **no direct reference** to `LedModule`. It doesn't kn
 
 The build script will run, find your `LedFlasher` module, generate the configuration, and your `main.cpp` will bring it to life. You should see the logs in the Serial Monitor and your LED will start blinking!
 
+:::note 💡 Troubleshooting: My Serial Monitor is Empty!
+Sometimes, your device (especially a fast one like an ESP32) will boot up and print all its initial logs in milliseconds, long before you can open the Serial Monitor. This might make it seem like your program is frozen or not working.
+
+This is a normal "race condition" between your fast microcontroller and your human reaction time.
+
+**The Solution is Simple:**
+
+1. Keep the Serial Monitor window open.
+2. Press the physical **RESET** (or RST/EN) button on your development board.
+
+Your device will restart, and because the Serial Monitor is already open and listening, you will see all the boot-up messages from the very beginning, including any potential configuration errors from the `ResourceManager`.
+
+**Pro Tip:** PlatformIO's **"Upload and Monitor"** command automates this for you. It uploads the code and immediately opens the monitor, catching the device right as it reboots.
+:::
+
 ---
 
 ### Next Steps

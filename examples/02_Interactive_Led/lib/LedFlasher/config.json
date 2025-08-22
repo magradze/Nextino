@@ -1,0 +1,11 @@
+{
+  "type": "LedModule",
+  "config": {
+    "resource": {
+      "type": "gpio",
+      "pin": 2,
+      "mode": "output"
+    },
+    "blink_interval_ms": 500
+  }
+}

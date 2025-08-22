@@ -1,0 +1,43 @@
+/* .features {
+  display: flex;
+  align-items: center;
+  padding: 2rem 0;
+  width: 100%;
+}
+
+.featureSvg {
+  height: 200px;
+  width: 200px;
+} */
+
+.features {
+  padding: 4rem 0;
+}
+
+.featureSvg {
+  height: 160px;
+  width: 160px;
+  margin-bottom: 1rem;
+}
+
+/* Hero Styling */
+.hero-gradient {
+  background: var(--nextino-gradient);
+  background-clip: padding-box;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: var(--nextino-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+  color: var(--ifm-color-primary);
+  font-size: 1.25rem;
+  margin-top: 1rem;
+}

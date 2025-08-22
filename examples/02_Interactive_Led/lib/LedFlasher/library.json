@@ -1,0 +1,9 @@
+{
+    "name": "LedFlasher",
+    "version": "1.0.0",
+    "description": "A simple LED flasher module for the Nextino framework.",
+    "keywords": "nextino-module, led, flasher",
+    "dependencies": {
+        "Nextino": "*"
+    }
+}

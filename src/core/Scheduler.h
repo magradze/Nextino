@@ -5,8 +5,8 @@
  *              millis-based task scheduler for periodic and one-shot operations.
  *
  * @author      Giorgi Magradze
- * @date        2025-08-19
- * @version     0.1.0
+ * @date        2025-08-21
+ * @version     0.2.0
  *
  * @copyright   (c) 2025 Nextino. All rights reserved.
  * @license     MIT License
@@ -15,20 +15,19 @@
 #pragma once
 #include <vector>
 #include <functional>
+#include <cstdint> // For uint32_t
 
 /**
  * @class Scheduler
  * @brief A singleton class for managing non-blocking, time-based tasks.
- * @details This scheduler avoids the use of `delay()` by checking `millis()` on
- *          every program loop, allowing for cooperative multitasking.
  */
 class Scheduler {
 public:
     /**
-     * @brief Gets the singleton instance of the Scheduler.
-     * @return A reference to the Scheduler.
+     * @typedef TaskHandle
+     * @brief A unique identifier for a scheduled task.
      */
-    static Scheduler& getInstance();
+    using TaskHandle = uint32_t;
 
     /**
      * @typedef TaskCallback
@@ -36,46 +35,48 @@ public:
      */
     using TaskCallback = std::function<void()>;
 
+    static Scheduler &getInstance();
+
     /**
      * @brief Schedules a task to be executed only once after a specified delay.
      * @param delayMs The delay in milliseconds before the task is executed.
      * @param callback The function to be executed.
+     * @return A unique handle for the scheduled task.
      */
-    void scheduleOnce(unsigned long delayMs, TaskCallback callback);
+    TaskHandle scheduleOnce(unsigned long delayMs, TaskCallback callback);
 
     /**
      * @brief Schedules a task to be executed periodically.
      * @param intervalMs The interval in milliseconds between executions.
      * @param callback The function to be executed.
+     * @return A unique handle for the scheduled task.
      */
-    void scheduleRecurring(unsigned long intervalMs, TaskCallback callback);
+    TaskHandle scheduleRecurring(unsigned long intervalMs, TaskCallback callback);
 
     /**
-     * @brief The main update loop for the scheduler.
-     * @details This method must be called repeatedly, typically from `SystemManager::loop()`,
-     *          to check for and execute any pending tasks.
+     * @brief Cancels a previously scheduled task.
+     * @param handle The handle of the task to cancel, returned by a schedule* method.
+     * @return True if the task was found and cancelled, false otherwise.
      */
+    bool cancel(TaskHandle handle);
+
     void loop();
 
 private:
-    /**
-     * @brief Private constructor to enforce the singleton pattern.
-     */
-    Scheduler() {}
+    Scheduler() : _nextTaskHandle(1) {} // Initialize handle counter
 
     /**
      * @struct ScheduledTask
      * @brief Internal structure to hold information about a scheduled task.
      */
     struct ScheduledTask {
+        TaskHandle handle; // Unique ID for this task
         unsigned long interval;
         unsigned long lastRun;
         TaskCallback callback;
         bool recurring;
     };
 
-    /**
-     * @brief A vector that stores all scheduled tasks.
-     */
-    std::vector<ScheduledTask> tasks;
+    std::vector<ScheduledTask> _tasks;
+    TaskHandle _nextTaskHandle;
 };
