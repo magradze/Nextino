@@ -23,11 +23,12 @@
 /**
  * @typedef ModuleCreationFunction
  * @brief A function pointer type for a factory function that creates a module instance.
+ * @param instanceName The unique instance name for this module, read from the config.
  * @param config A constant reference to a `JsonObject` containing the specific
  *               configuration for the module to be created.
  * @return A pointer to the newly created `BaseModule` instance.
  */
-using ModuleCreationFunction = std::function<BaseModule*(const JsonObject&)>;
+using ModuleCreationFunction = std::function<BaseModule *(const char *instanceName, const JsonObject &)>;
 
 /**
  * @class ModuleFactory
@@ -51,15 +52,16 @@ public:
      * @param type The string identifier for the module type (e.g., "LedModule").
      * @param func The factory function that can create an instance of this module.
      */
-    void registerModule(const std::string& type, ModuleCreationFunction func);
+    void registerModule(const char *type, ModuleCreationFunction func);
 
     /**
-     * @brief Creates an instance of a module given its type and configuration.
-     * @param type The string identifier of the module to create.
+     * @brief Creates an instance of a module given its type, instance name, and configuration.
+     * @param type The string identifier of the module to create (e.g., "LedModule").
+     * @param instanceName The unique name for this specific instance (e.g., "main_light").
      * @param config The `JsonObject` containing the configuration for this specific instance.
      * @return A pointer to the newly created `BaseModule`, or `nullptr` if the type is unknown.
      */
-    BaseModule* createModule(const std::string& type, const JsonObject& config);
+    BaseModule *createModule(const char *type, const char *instanceName, const JsonObject &config);
 
 private:
     /**
