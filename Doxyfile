@@ -1,0 +1,11 @@
+# Doxyfile
+
+PROJECT_NAME           = "Nextino"
+OUTPUT_DIRECTORY       = ./.doxygen
+INPUT                  = ./src ./examples
+RECURSIVE              = YES
+
+GENERATE_HTML          = NO
+GENERATE_LATEX         = NO
+GENERATE_XML           = YES
+XML_OUTPUT             = xml

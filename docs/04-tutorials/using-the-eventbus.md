@@ -1,33 +1,47 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 title: 'Using the EventBus'
 ---
 
 # 📡 Using the EventBus for Module Communication
 
-You've created a module that can act on its own, but the true power of a modular framework is unlocked when modules can communicate. In Nextino, the primary way to achieve this is through the **`EventBus`**.
+You've created a self-contained module, but the true power of a modular framework is unlocked when modules can communicate. In Nextino, the primary way to achieve **decoupled, one-to-many** communication is through the **`EventBus`**. 📢
 
-This tutorial builds upon the previous one. We will modify our `LedModule` to listen for the `"button_pressed"` event published by our `ButtonModule`, following our best practice of separating logic into different files.
+This tutorial builds upon the `ButtonModule` we created previously. We will modify our `LedModule` to listen for events and react to them, following our best practice of separating logic into dedicated files.
 
 ---
 
 ## 🎯 The Goal
 
-We will create a system where:
+We will create a fun, interactive system where:
 
-1. The `ButtonModule` detects a press and posts a `"button_pressed"` event.
-2. The `LedModule` subscribes to this event.
-3. When the event is received, the `LedModule` will toggle its blinking state (on/off).
+1. The `ButtonModule` detects short and long presses, posting `button_short_press` and `button_long_press` events.
+2. The `LedModule` subscribes to both of these events.
+3. The event handling logic will live in its own `LedModule_events.cpp` file.
+4. A **short press** will toggle the LED's blinking state.
+5. A **long press** will toggle the LED's solid state.
 
-This creates an interactive system where two modules collaborate without having any direct knowledge of each other.
+This creates a sophisticated, well-structured system where two modules collaborate without any direct knowledge of each other. ✨
 
 ## Step 1: Update the `LedModule` to be Event-Aware
 
-First, we need to give our `LedModule` the ability to subscribe to events and a state to toggle.
+First, let's give our `LedModule` a proper state machine and prepare it for event subscriptions.
 
-### 1.1. Update the Header (`LedModule.h`)
+### 1.1. Update the File Structure
 
-Let's add a state variable, a task handle, and declare the new event handler method.
+Let's add a new file to our `LedFlasher` library for the event handling logic.
+
+```plaintext
+lib/LedFlasher/
+└── src/
+    ├── LedModule.h
+    ├── LedModule.cpp         // Constructor & Lifecycle
+    └── LedModule_events.cpp  // ✨ NEW: Event handling logic
+```
+
+### 1.2. Update the Header (`LedModule.h`)
+
+The header file defines the module's "contract," including the private methods that will handle the events.
 
 ```cpp title="lib/LedFlasher/src/LedModule.h"
 #pragma once
@@ -35,17 +49,28 @@ Let's add a state variable, a task handle, and declare the new event handler met
 
 class LedModule : public BaseModule {
 private:
+    // Define clear states for the module
+    enum class LedState {
+        OFF,
+        ON,
+        BLINKING
+    };
+
     // Configuration
-    int ledPin;
-    unsigned long blinkInterval;
+    int _pin;
+    unsigned long _interval;
 
     // Internal State
-    bool isBlinking;
-    uint32_t blinkTaskHandle;
+    uint32_t _taskHandle;
+    LedState _currentState;
 
     // --- Method Declarations ---
-    // This method will be implemented in LedModule_events.cpp
-    void handleButtonPress(void* payload);
+    // These will be implemented in LedModule_events.cpp
+    void handleShortPress(void* payload);
+    void handleLongPress(void* payload);
+
+    // This will also be in LedModule_events.cpp as it's part of the core logic
+    void setState(LedState newState);
 
 public:
     LedModule(const JsonObject& config);
@@ -61,102 +86,129 @@ public:
 };
 ```
 
-### 1.2. Update the Implementation Files
+### 1.3. Update the Main Implementation (`LedModule.cpp`)
 
-Now, let's separate the implementation. The `start()` method in `LedModule.cpp` will subscribe to the event, and the actual logic will live in a new `LedModule_events.cpp` file.
+The main `.cpp` file is the "orchestrator." Its job is to handle the lifecycle and set up the subscriptions. The actual logic is delegated to the methods implemented in `LedModule_events.cpp`.
 
-**`lib/LedFlasher/src/LedModule.cpp` (Lifecycle Methods):**
-
-```cpp
+```cpp title="lib/LedFlasher/src/LedModule.cpp"
 #include "LedModule.h"
 
+// --- Constructor and Lifecycle ---
+
 LedModule::LedModule(const JsonObject& config) {
-    ledPin = config["pin"] | LED_BUILTIN;
-    blinkInterval = config["interval_ms"] | 1000;
-    isBlinking = false; // Start with blinking disabled
-    blinkTaskHandle = 0;
+    _pin = config["resource"]["pin"];
+    _interval = config["blink_interval_ms"] | 500;
+    _taskHandle = 0;
+    _currentState = LedState::OFF;
 }
 
-const char* LedModule::getName() const {
-    return "LedModule";
-}
+const char* LedModule::getName() const { return "LedModule"; }
 
 void LedModule::init() {
-    pinMode(ledPin, OUTPUT);
-    digitalWrite(ledPin, LOW); // Ensure LED is off initially
-    NEXTINO_LOGI(getName(), "Initialized on pin %d.", ledPin);
+    pinMode(_pin, OUTPUT);
+    digitalWrite(_pin, LOW);
+    NEXTINO_LOGI(getName(), "Initialized on pin %d.", _pin);
 }
 
 void LedModule::start() {
     // The start() method's only job is to set up subscriptions.
     // The logic itself is in another file.
-    NextinoEvent().on("button_pressed", [this](void* payload) {
-        this->handleButtonPress(payload);
-    });
-    NEXTINO_LOGI(getName(), "Subscribed to 'button_pressed' event.");
+    NextinoEvent().on("button_short_press", [this](void* p) { this->handleShortPress(p); });
+    NextinoEvent().on("button_long_press", [this](void* p) { this->handleLongPress(p); });
+
+    NEXTINO_LOGI(getName(), "Subscribed to button events.");
 }
 ```
 
-**`lib/LedFlasher/src/LedModule_events.cpp` (Event Handling Logic - NEW FILE):**
+### 1.4. Create the Event Logic File (`LedModule_events.cpp`)
 
-```cpp
+This new file contains the "brains" of the module—the state machine and the event handlers.
+
+```cpp title="lib/LedFlasher/src/LedModule_events.cpp"
 #include "LedModule.h"
 
-// This is the implementation of our event handler.
-// It's part of the LedModule class but lives in its own file for clarity.
-void LedModule::handleButtonPress(void* payload) {
-    isBlinking = !isBlinking; // Toggle the blinking state
+// --- Event Handlers ---
 
-    if (isBlinking) {
-        NEXTINO_LOGI(getName(), "Button event received! Starting blink.");
-        // If a task handle doesn't exist, create one.
-        if (blinkTaskHandle == 0) {
-            blinkTaskHandle = NextinoScheduler().scheduleRecurring(blinkInterval, [this]() {
-                digitalWrite(ledPin, !digitalRead(ledPin));
-            });
-        }
+void LedModule::handleShortPress(void* payload) {
+    NEXTINO_LOGI(getName(), "Short press event received!");
+    // Short press toggles between BLINKING and OFF
+    if (_currentState == LedState::BLINKING) {
+        setState(LedState::OFF);
     } else {
-        NEXTINO_LOGI(getName(), "Button event received! Stopping blink.");
-        // If a task handle exists, remove it from the scheduler.
-        if (blinkTaskHandle != 0) {
-            NextinoScheduler().cancel(blinkTaskHandle);
-            blinkTaskHandle = 0;
-            digitalWrite(ledPin, LOW); // Ensure LED is turned off
-        }
+        setState(LedState::BLINKING);
+    }
+}
+
+void LedModule::handleLongPress(void* payload) {
+    NEXTINO_LOGI(getName(), "Long press event received!");
+    // Long press toggles between ON and OFF
+    if (_currentState == LedState::ON) {
+        setState(LedState::OFF);
+    } else {
+        setState(LedState::ON);
+    }
+}
+
+// --- Private State Machine ---
+
+void LedModule::setState(LedState newState) {
+    if (_currentState == newState) return; // No change
+
+    _currentState = newState;
+    NEXTINO_LOGI(getName(), "Changing state to %d", (int)_currentState);
+
+    // First, always clean up the previous state (cancel timers)
+    if (_taskHandle != 0) {
+        NextinoScheduler().cancel(_taskHandle);
+        _taskHandle = 0;
+    }
+
+    // Then, apply the new state
+    switch (_currentState) {
+        case LedState::OFF:
+            digitalWrite(_pin, LOW);
+            break;
+        case LedState::ON:
+            digitalWrite(_pin, HIGH);
+            break;
+        case LedState::BLINKING:
+            _taskHandle = NextinoScheduler().scheduleRecurring(_interval, [this]() {
+                digitalWrite(_pin, !digitalRead(_pin));
+            });
+            break;
     }
 }
 ```
 
-:::danger Important: Scheduler Update
-To make this work, you will need to add a `cancel(uint32_t handle)` method to your `Scheduler` class. The `scheduleRecurring` method should now return a unique handle (e.g., an incrementing integer) for each task.
-:::
+## Step 2: Put It All Together
 
-## Step 2: Update Your Project
+The process to get your project running is the same as before.
 
-The process to update your project remains the same.
-
-1. **Create the `ButtonReader` module** in your `lib` folder as described in the [previous tutorial](./creating-a-custom-module).
+1. **Create the `ButtonReader` module** in your `lib` folder as described in the [previous tutorial](/tutorials/creating-a-custom-module).
 2. **Update `platformio.ini`** to include both modules as dependencies.
 
     ```ini title="platformio.ini"
     lib_deps =
-        ../../      # The Nextino Framework itself
+        https://github.com/magradze/Nextino.git
         lib/LedFlasher
         lib/ButtonReader
     ```
 
-3. **The `bootstrap.py` script will do the rest!** Your `main.cpp` **does not need to change at all**.
+3. **The `bootstrap.py` script will do the rest!** Your `main.cpp` **does not need to change at all**. That's the power of plug-and-play! 🔌
 
-## Step 3: Run and Test
+## Step 3: Run and Test 🧪
 
-Upload the code to your board. The behavior will be the same as before, but now your `LedModule`'s code is cleanly separated by responsibility, making it much easier to read and maintain.
+Upload the code to your board and open the Serial Monitor.
 
-You have successfully created a system where two modules communicate via events, following a clean and structured file organization.
+* **Press the button briefly:** The LED should start blinking. Press it briefly again, and it should stop.
+* **Press and hold the button:** The LED should turn on and stay on. Press and hold it again, and it should turn off.
+
+You have now successfully created a system where two modules communicate via events, following best practices for code organization.
 
 ---
 
 ### Next Steps
 
-Now that you've mastered module creation and communication, let's look at how to manage hardware resources safely.
+Now that you've mastered event-based communication, let's look at how modules can request services from each other directly using the `ServiceLocator`.
 
-➡️ **[Using the ResourceManager](./safe-hardware-access)**
+➡️ **[Using the ServiceLocator](/tutorials/using-the-servicelocator)**

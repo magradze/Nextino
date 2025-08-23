@@ -5,9 +5,9 @@ title: 'Creating a Custom Module'
 
 # 🛠️ Creating a Custom Module
 
-This tutorial will guide you through the process of creating your own reusable, plug-and-play module for the Nextino framework. We will build a `ButtonModule` that demonstrates best practices for module structure and code organization, mirroring the clean, separated logic of the original Synapse Framework.
+This tutorial will guide you through creating your own reusable, plug-and-play module for the Nextino framework. We will build a `ButtonModule` that demonstrates best practices for module structure, code organization, and safe hardware access using the `ResourceManager`.
 
-By the end, you will have a self-contained module with its logic split into distinct, responsible files.
+By the end, you will have a self-contained module that can detect both **short** and **long presses** and broadcast them as separate events! 🚀
 
 ---
 
@@ -16,47 +16,57 @@ By the end, you will have a self-contained module with its logic split into dist
 We will create a `ButtonModule` with the following features:
 
 1. It will monitor a GPIO pin connected to a push button.
-2. It will handle debouncing to prevent multiple triggers.
-3. When a valid press is detected, it will **post an event** to the `EventBus`.
-4. Its code will be cleanly separated into `ButtonModule.cpp` (lifecycle) and `ButtonModule_events.cpp` (logic).
+2. It will be "resource-aware," declaring its pin usage for the `ResourceManager`.
+3. It will handle debouncing to prevent false triggers.
+4. It will detect the difference between a short press and a long press.
+5. It will post distinct events (`button_short_press`, `button_long_press`) to the `EventBus`.
 
 ## Step 1: Module File Structure
 
-First, let's create the file structure for our new module. In your project's `lib` directory, create a new folder named `ButtonReader`.
+First, let's create the file structure. In your project's `lib` directory, create a new folder named `ButtonReader`.
 
-```
+```plaintext
 lib/
 └── ButtonReader/
     ├── config.json
     ├── library.json
     └── src/
         ├── ButtonModule.h
-        ├── ButtonModule.cpp         // For constructor and lifecycle methods
-        └── ButtonModule_events.cpp  // For event handling and core logic
+        └── ButtonModule.cpp
 ```
 
-:::info File Organization Principle
-Nextino encourages separating code by responsibility to keep modules clean and maintainable:
+:::info Splitting Logic into Multiple Files
+For more complex modules, Nextino encourages separating code by responsibility. For example:
 
-- **`ModuleName.cpp`**: This file should contain the constructor and the main `BaseModule` lifecycle methods (`init`, `start`, `loop`). It acts as the module's "orchestrator".
-- **`ModuleName_events.cpp`**: This file is ideal for the core logic, especially event handling or, as in this tutorial, the logic that *produces* events.
-- **`ModuleName_api.cpp` (Future)**: This file would contain the implementation for a `ServiceLocator` API.
-- **`ModuleName_cmd.cpp` (Future)**: This file would contain handlers for CLI commands.
+- **`ModuleName.cpp`**: Contains the constructor and `BaseModule` lifecycle methods (`init`, `start`, `loop`).
+- **`ModuleName_events.cpp`**: Contains the core logic, especially for handling or producing events.
+
+For this tutorial, we'll keep the logic in a single `.cpp` file for simplicity.
 :::
 
 ### 1.1. The Configuration (`config.json`)
+
+This is where we declare our module's parameters and, crucially, the hardware resource it needs.
 
 ```json title="lib/ButtonReader/config.json"
 {
   "type": "ButtonModule",
   "config": {
-    "pin": 4,
+    "resource": {
+      "type": "gpio",
+      "pin": 4
+    },
+    "long_press_ms": 1000,
     "debounce_delay_ms": 50
   }
 }
 ```
 
+✨ **Notice the `"resource"` object!** This special key tells the `SystemManager` to ask the `ResourceManager` to lock GPIO pin 4 for this module, preventing any other module from using it by mistake.
+
 ### 1.2. The Manifest (`library.json`)
+
+This file tells PlatformIO about our library and marks it as a Nextino module.
 
 ```json title="lib/ButtonReader/library.json"
 {
@@ -70,7 +80,7 @@ Nextino encourages separating code by responsibility to keep modules clean and m
 
 ## Step 2: The Header File (`ButtonModule.h`)
 
-The header file defines the class interface and declares all methods, including those that will be implemented in separate `.cpp` files.
+The header file defines the class interface, its private members, and public methods.
 
 ```cpp title="lib/ButtonReader/src/ButtonModule.h"
 #pragma once
@@ -79,16 +89,16 @@ The header file defines the class interface and declares all methods, including 
 class ButtonModule : public BaseModule {
 private:
     // Configuration
-    int buttonPin;
-    unsigned long debounceDelay;
-
-    // Internal State
-    int lastButtonState;
-    unsigned long lastDebounceTime;
-
-    // --- Method Declarations ---
-    // This method is part of the core logic and will be defined in ButtonModule_events.cpp
-    void checkButtonAndPublishEvent();
+    int _pin;
+    unsigned long _longPressTime;
+    unsigned long _debounceDelay;
+    
+    // Internal state for debouncing and long press detection
+    int _buttonState;
+    int _lastButtonState;
+    unsigned long _lastDebounceTime;
+    unsigned long _pressStartTime;
+    bool _longPressTriggered;
 
 public:
     ButtonModule(const JsonObject& config);
@@ -97,29 +107,34 @@ public:
         return new ButtonModule(config);
     }
 
-    // --- BaseModule Lifecycle Methods (implemented in ButtonModule.cpp) ---
+    // --- BaseModule Lifecycle Methods ---
     const char* getName() const override;
     void init() override;
     void loop() override;
 };
 ```
 
-## Step 3: The Implementation Files
+## Step 3: The Implementation (`ButtonModule.cpp`)
 
-Now we'll implement the declared methods in their respective files.
-
-### 3.1. Main Implementation (`ButtonModule.cpp`)
-
-This file is responsible only for the "official" `BaseModule` contract.
+This is where the magic happens! We'll implement the constructor and the lifecycle methods. The core logic will live inside the `loop()` method.
 
 ```cpp title="lib/ButtonReader/src/ButtonModule.cpp"
 #include "ButtonModule.h"
 
 ButtonModule::ButtonModule(const JsonObject& config) {
-    buttonPin = config["pin"];
-    debounceDelay = config["debounce_delay_ms"] | 50;
-    lastButtonState = HIGH; // Assuming pull-up resistor
-    lastDebounceTime = 0;
+    // Read pin from the "resource" object for ResourceManager compatibility
+    _pin = config["resource"]["pin"];
+
+    // Read other parameters with default values
+    _longPressTime = config["long_press_ms"] | 1000;
+    _debounceDelay = config["debounce_delay_ms"] | 50;
+
+    // Initialize internal state
+    _lastButtonState = HIGH;
+    _buttonState = HIGH;
+    _lastDebounceTime = 0;
+    _pressStartTime = 0;
+    _longPressTriggered = false;
 }
 
 const char* ButtonModule::getName() const {
@@ -127,56 +142,60 @@ const char* ButtonModule::getName() const {
 }
 
 void ButtonModule::init() {
-    pinMode(buttonPin, INPUT_PULLUP);
-    NEXTINO_LOGI(getName(), "Initialized on pin %d.", buttonPin);
+    pinMode(_pin, INPUT_PULLUP);
+    NEXTINO_LOGI(getName(), "Initialized on pin %d.", _pin);
 }
 
 void ButtonModule::loop() {
-    // The main loop delegates the core work to the logic function.
-    checkButtonAndPublishEvent();
-}
-```
+    int reading = digitalRead(_pin);
 
-### 3.2. Event Logic (`ButtonModule_events.cpp`)
-
-This file contains the actual "work" of the module.
-
-```cpp title="lib/ButtonReader/src/ButtonModule_events.cpp"
-#include "ButtonModule.h"
-
-// This is a private method of the ButtonModule class, but defined here
-// to keep the logic separated.
-void ButtonModule::checkButtonAndPublishEvent() {
-    int reading = digitalRead(buttonPin);
-
-    // If the switch changed, due to noise or pressing, reset the timer
-    if (reading != lastButtonState) {
-        lastDebounceTime = millis();
+    // --- Debounce Logic ---
+    if (reading != _lastButtonState) {
+        _lastDebounceTime = millis();
     }
 
-    // Check if the state has been stable for longer than the debounce delay
-    if ((millis() - lastDebounceTime) > debounceDelay) {
-        // A valid state change has occurred
-        if (reading == LOW && lastButtonState == HIGH) { // Button was just pressed
-            NEXTINO_LOGI(getName(), "Button Pressed! Posting event...");
-            
-            // Post an event to the EventBus for other modules to hear
-            NextinoEvent().post("button_pressed");
+    // --- State Change Logic ---
+    if ((millis() - _lastDebounceTime) > _debounceDelay) {
+        if (reading != _buttonState) {
+            _buttonState = reading;
+
+            if (_buttonState == LOW) { // Button was JUST pressed
+                _pressStartTime = millis();
+                _longPressTriggered = false;
+                NEXTINO_LOGD(getName(), "Button press started.");
+            } else { // Button was JUST released
+                if (!_longPressTriggered) {
+                    NEXTINO_LOGI(getName(), "Short press detected! Posting event.");
+                    NextinoEvent().post("button_short_press");
+                }
+                _pressStartTime = 0; // Reset timer
+            }
         }
     }
 
-    lastButtonState = reading;
+    // --- Long Press Detection Logic ---
+    if (_buttonState == LOW && _pressStartTime != 0 && !_longPressTriggered) {
+        if (millis() - _pressStartTime > _longPressTime) {
+            _longPressTriggered = true;
+            NEXTINO_LOGI(getName(), "Long press detected! Posting event.");
+            NextinoEvent().post("button_long_press");
+        }
+    }
+
+    _lastButtonState = reading;
 }
 ```
 
 ## Step 4: Using Your New Module
 
-The process remains the same. Add `ButtonReader` to your project's `lib_deps`, and the `bootstrap.py` script will discover it and generate the necessary configuration. The `SystemManager` will then create and run it automatically.
+The process is beautifully simple. Just add your new `ButtonReader` library to your project's `platformio.ini` `lib_deps`.
+
+The `bootstrap.py` script will automatically discover it, read its `config.json`, and the `SystemManager` will create it and run its lifecycle methods. The `ResourceManager` will ensure its pin is protected. **You don't need to change `main.cpp` at all!**
 
 ---
 
 ### Next Steps
 
-Now that you have a module that produces events, let's see how another module can listen for them.
+Now that you have a module that produces events, let's see how another module can listen for them and create interactive behavior.
 
-➡️ **[Using the EventBus](./using-the-eventbus)**
+➡️ **[Using the EventBus](/tutorials/using-the-eventbus)**
