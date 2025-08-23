@@ -1,4 +1,4 @@
-# extra_scripts/nextino_scripts/config_aggregator.py
+# extras/scripts/nextino_scripts/config_aggregator.py
 """
 This module is responsible for finding and processing Nextino modules.
 It scans the project's 'lib' directory, identifies valid Nextino modules
@@ -32,25 +32,20 @@ def _is_nextino_module(lib_path):
 
 def find_and_process_modules(project_lib_dir):
     """
-    Scans the project library directory, finds all valid Nextino modules,
-    and returns their aggregated configuration and metadata. It supports both
-    single object and array of objects in `config.json` files.
-
-    Args:
-        project_lib_dir (str): The path to the project's 'lib' directory.
-
-    Returns:
-        dict: A dictionary containing lists of module configurations, headers, and class names.
+    Scans libs, finds Nextino modules, and returns aggregated configs and metadata.
+    It now also extracts `mqtt_interface` data for each module instance.
     """
     all_module_configs = []
     unique_module_headers = set()
     unique_module_class_names = set()
+    mqtt_interfaces = [] # New list to store MQTT data
 
     if not os.path.exists(project_lib_dir):
         return {
             "configs": [],
             "headers": [],
-            "class_names": []
+            "class_names": [],
+            "mqtt_interfaces": []
         }
 
     for lib_name in os.listdir(project_lib_dir):
@@ -60,21 +55,33 @@ def find_and_process_modules(project_lib_dir):
 
         print(f"  -> Found Nextino module: {lib_name}")
 
-        # Process config.json
         config_path = os.path.join(lib_path, "config.json")
         if os.path.exists(config_path):
             try:
                 with open(config_path, 'r', encoding='utf-8') as f:
                     config_data = json.load(f)
-                    # Support both a single config object and an array of configs
-                    if isinstance(config_data, list):
-                        all_module_configs.extend(config_data)
-                    else:
-                        all_module_configs.append(config_data)
+                    
+                    # Ensure config_data is a list for uniform processing
+                    if not isinstance(config_data, list):
+                        config_data = [config_data]
+
+                    all_module_configs.extend(config_data)
+
+                    # --- NEW: Extract MQTT interface from each instance ---
+                    for instance_config in config_data:
+                        instance_name = instance_config.get("instance_name")
+                        module_type = instance_config.get("type")
+                        mqtt_interface = instance_config.get("mqtt_interface")
+
+                        if instance_name and module_type and mqtt_interface:
+                            mqtt_interfaces.append({
+                                "instance_name": instance_name,
+                                "module_type": module_type,
+                                "interface": mqtt_interface
+                            })
             except Exception as e:
                 print(f"Warning: Could not parse {config_path}: {e}", file=sys.stderr)
         
-        # Process header file to find the class name (we only need one per module type)
         src_dir = os.path.join(lib_path, "src")
         if os.path.exists(src_dir):
             for header_file in os.listdir(src_dir):
@@ -82,11 +89,11 @@ def find_and_process_modules(project_lib_dir):
                     class_name = header_file.replace(".h", "")
                     unique_module_headers.add(f'#include <{header_file}>')
                     unique_module_class_names.add(class_name)
-                    # We assume one public header per module library
                     break
     
     return {
         "configs": all_module_configs,
         "headers": sorted(list(unique_module_headers)),
-        "class_names": sorted(list(unique_module_class_names))
+        "class_names": sorted(list(unique_module_class_names)),
+        "mqtt_interfaces": mqtt_interfaces
     }
