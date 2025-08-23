@@ -23,16 +23,15 @@ jobs:
     steps:
       - name: 'Checkout repository'
         uses: actions/checkout@v4
-        
+
       - name: 'Install Doxygen and Doxybook2'
         run: |
           # Install dependencies: doxygen for XML generation and unzip for extracting Doxybook2
           sudo apt-get update
           sudo apt-get install -y doxygen unzip
 
-          # Download and install the latest Doxybook2
-          # We are using v2.1.3 as it is the latest stable release
-          wget https://github.com/matusnovak/doxybook2/releases/download/v2.1.3/doxybook2-linux-amd64.zip -O doxybook2.zip
+          # Download and install Doxybook2 v1.5.0, which has a stable asset URL
+          wget https://github.com/matusnovak/doxybook2/releases/download/v1.5.0/doxybook2-linux-amd64-v1.5.0.zip -O doxybook2.zip
           
           # Unzip the archive
           unzip doxybook2.zip
