@@ -23,15 +23,24 @@ jobs:
     steps:
       - name: 'Checkout repository'
         uses: actions/checkout@v4
-
-      # --- 👇 API დოკუმენტაციის გენერაციის ნაბიჯები ---
+        
       - name: 'Install Doxygen and Doxybook2'
         run: |
+          # Install dependencies: doxygen for XML generation and unzip for extracting Doxybook2
           sudo apt-get update
-          sudo apt-get install -y doxygen
-          # Download and install Doxybook2
-          wget https://github.com/matusnovak/doxybook2/releases/download/v1.4.1/doxybook2-linux-amd64 -O doxybook2
+          sudo apt-get install -y doxygen unzip
+
+          # Download and install the latest Doxybook2
+          # We are using v2.1.3 as it is the latest stable release
+          wget https://github.com/matusnovak/doxybook2/releases/download/v2.1.3/doxybook2-linux-amd64.zip -O doxybook2.zip
+          
+          # Unzip the archive
+          unzip doxybook2.zip
+          
+          # Make the binary executable
           chmod +x ./doxybook2
+          
+          # Move the binary to a directory in the system's PATH
           sudo mv ./doxybook2 /usr/local/bin/
 
       - name: 'Generate API Docs (Doxygen XML)'
@@ -39,7 +48,6 @@ jobs:
 
       - name: 'Generate API Docs (Doxybook2 Markdown)'
         run: doxybook2 --config doxybook.config.json
-      # --- 👆 API დოკუმენტაციის გენერაციის დასასრული ---
 
       - name: 'Set up Node.js'
         uses: actions/setup-node@v4
