@@ -1,41 +1,49 @@
 # extra_scripts/bootstrap.py
-"""
-Main entry point for the Nextino build process automation.
-
-This script acts as a conductor, orchestrating the different parts of the build
-process:
-1. It aggregates configurations from all Nextino modules in the project.
-2. It generates the `generated_config.h` header file containing the
-   aggregated configuration and module registration code.
-3. It configures the PlatformIO build environment to include the generated header.
-"""
+# FINAL, SIMPLIFIED, AND ROBUST VERSION
 
 import os
+import sys
 from SCons.Script import Import
 
-# Import our custom build modules
-from nextino_scripts import config_aggregator
-from nextino_scripts import code_generator
-
-# Import the environment
+# Import the build environment from SCons. This MUST be at the top level.
 Import("env")
+
+try:
+    # --- The definitive, "dumb" way to set up the Python path ---
+    # 1. Get the project's root directory. This is always reliable.
+    project_dir = env.get("PROJECT_DIR")
+
+    # 2. Construct the absolute path to our scripts directory based on the known structure.
+    #    We know our scripts are always inside `lib/Nextino/extra_scripts`.
+    scripts_dir = os.path.join(project_dir, "lib", "Nextino", "extra_scripts")
+
+    # 3. Add this bulletproof path to Python's system path.
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    # --- END PATH INJECTION ---
+
+    # Now, with the path correctly set, import our modules.
+    from nextino_scripts import config_aggregator, code_generator
+
+except Exception as e:
+    print(f"FATAL ERROR: Could not set up Nextino build environment.", file=sys.stderr)
+    print(f"--> Error: {e}", file=sys.stderr)
+    sys.exit(1)
+
 
 def main(build_env):
     """The main function orchestrating the build process."""
+    # We already have project_dir, but we can get it again for clarity.
     project_dir = build_env.get("PROJECT_DIR")
     project_include_dir = os.path.join(project_dir, "include")
     project_lib_dir = os.path.join(project_dir, "lib")
     
     print(f"--- [Nextino Bootstrap] Running for project: {project_dir} ---")
 
-    # --- Step 1: Aggregate configurations from all found modules ---
+    # The rest of the logic remains the same.
     module_data = config_aggregator.find_and_process_modules(project_lib_dir)
-
-    # --- Step 2: Generate the C++ header file content ---
     header_content = code_generator.generate_header_file(module_data)
 
-    # --- Step 3: Write the generated content to the header file ---
-    # Ensure the 'include' directory exists
     if not os.path.exists(project_include_dir):
         os.makedirs(project_include_dir)
     
@@ -45,12 +53,13 @@ def main(build_env):
 
     print(f"--- [Nextino Bootstrap] Finished: '{generated_header_path}' created. ---")
 
-    # --- Step 4: Add the include path to the PlatformIO build environment ---
     build_env.Prepend(CPPPATH=[project_include_dir])
     print(f"--- [Nextino] Added '{project_include_dir}' to build environment CPPPATH. ---")
 
 
-# --- Main execution ---
-if __name__ == "__main__":
-    # The 'env' variable is globally available from PlatformIO's SCons environment
+# --- Main execution triggered by SCons ---
+try:
     main(env)
+except Exception as e:
+    print(f"FATAL: Unhandled error in Nextino bootstrap script: {e}", file=sys.stderr)
+    sys.exit(1)

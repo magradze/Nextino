@@ -33,7 +33,8 @@ def _is_nextino_module(lib_path):
 def find_and_process_modules(project_lib_dir):
     """
     Scans the project library directory, finds all valid Nextino modules,
-    and returns their aggregated configuration and metadata.
+    and returns their aggregated configuration and metadata. It supports both
+    single object and array of objects in `config.json` files.
 
     Args:
         project_lib_dir (str): The path to the project's 'lib' directory.
@@ -41,9 +42,9 @@ def find_and_process_modules(project_lib_dir):
     Returns:
         dict: A dictionary containing lists of module configurations, headers, and class names.
     """
-    module_configs = []
-    module_headers = []
-    module_class_names = []
+    all_module_configs = []
+    unique_module_headers = set()
+    unique_module_class_names = set()
 
     if not os.path.exists(project_lib_dir):
         return {
@@ -64,23 +65,28 @@ def find_and_process_modules(project_lib_dir):
         if os.path.exists(config_path):
             try:
                 with open(config_path, 'r', encoding='utf-8') as f:
-                    module_configs.append(json.load(f))
+                    config_data = json.load(f)
+                    # Support both a single config object and an array of configs
+                    if isinstance(config_data, list):
+                        all_module_configs.extend(config_data)
+                    else:
+                        all_module_configs.append(config_data)
             except Exception as e:
                 print(f"Warning: Could not parse {config_path}: {e}", file=sys.stderr)
         
-        # Process header file to find the class name
+        # Process header file to find the class name (we only need one per module type)
         src_dir = os.path.join(lib_path, "src")
         if os.path.exists(src_dir):
             for header_file in os.listdir(src_dir):
                 if header_file.endswith(".h"):
                     class_name = header_file.replace(".h", "")
-                    module_headers.append(f'#include <{header_file}>')
-                    module_class_names.append(class_name)
+                    unique_module_headers.add(f'#include <{header_file}>')
+                    unique_module_class_names.add(class_name)
                     # We assume one public header per module library
                     break
-
+    
     return {
-        "configs": module_configs,
-        "headers": module_headers,
-        "class_names": module_class_names
+        "configs": all_module_configs,
+        "headers": sorted(list(unique_module_headers)),
+        "class_names": sorted(list(unique_module_class_names))
     }

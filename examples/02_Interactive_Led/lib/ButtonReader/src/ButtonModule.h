@@ -14,10 +14,12 @@ private:
     bool _longPressTriggered;
 
 public:
-    ButtonModule(const JsonObject& config);
+    // Updated constructor to accept the instance name
+    ButtonModule(const char* instanceName, const JsonObject& config);
     
-    static BaseModule* create(const JsonObject& config) {
-        return new ButtonModule(config);
+    // Updated static create function to match the ModuleCreationFunction signature
+    static BaseModule* create(const char* instanceName, const JsonObject& config) {
+        return new ButtonModule(instanceName, config);
     }
 
     const char* getName() const override;
