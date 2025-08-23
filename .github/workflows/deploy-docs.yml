@@ -33,15 +33,16 @@ jobs:
           # Download and install Doxybook2 v1.5.0, which has a stable asset URL
           wget https://github.com/matusnovak/doxybook2/releases/download/v1.5.0/doxybook2-linux-amd64-v1.5.0.zip -O doxybook2.zip
           
-          # Unzip the archive
+          # Unzip the archive. This will create a 'bin' directory.
           unzip doxybook2.zip
           
-          # Make the binary executable
-          chmod +x ./doxybook2
+          # Make the binary executable, referencing its location inside the 'bin' directory
+          chmod +x ./bin/doxybook2
           
           # Move the binary to a directory in the system's PATH
-          sudo mv ./doxybook2 /usr/local/bin/
+          sudo mv ./bin/doxybook2 /usr/local/bin/
 
+          
       - name: 'Generate API Docs (Doxygen XML)'
         run: doxygen Doxyfile
 
