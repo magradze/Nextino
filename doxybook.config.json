@@ -1,13 +1,10 @@
 {
-    "input": "./.doxygen/xml",
-    "output": "./docs/05-api-reference",
+    "input": ".doxygen/xml",
+    "output": "docs/05-api-reference",
     "baseUrl": "/api-reference/",
     "indexInFolders": true,
-    "linkSuffix": ".md",
+    "linkSuffix": "",
     "emptyFolders": true,
-    "kind": {
-        "class": {
-            "template": "class.md.in"
-        }
-    }
+    "mainPageInRoot": true,
+    "mainPageName": "index"
 }
