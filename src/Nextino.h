@@ -26,6 +26,8 @@
 #include "core/ResourceManager.h"
 #include "core/EventBus.h"
 #include "core/ServiceLocator.h"
+#include "core/DeviceIdentity.h"
+#include "core/CommandRouter.h"
 
 /**
  * @brief Provides access to the global SystemManager instance.
@@ -62,3 +64,15 @@ inline EventBus &NextinoEvent() { return EventBus::getInstance(); }
  * @return A reference to the ServiceLocator singleton.
  */
 inline ServiceLocator &NextinoServices() { return ServiceLocator::getInstance(); }
+
+/**
+ * @brief Provides access to the global DeviceIdentity instance.
+ * @return A reference to the DeviceIdentity singleton.
+ */
+inline DeviceIdentity &NextinoDevice() { return DeviceIdentity::getInstance(); }
+
+/**
+ * @brief Provides access to the global CommandRouter instance.
+ * @return A reference to the CommandRouter singleton.
+ */
+inline CommandRouter &NextinoCommands() { return CommandRouter::getInstance(); }

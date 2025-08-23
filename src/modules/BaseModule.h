@@ -66,6 +66,13 @@ public:
     virtual void loop() {}
 
     /**
+     * @brief Called once by the SystemManager to allow the module to register its commands.
+     * @details Override this method in your module and use `NextinoCommands().registerCommand()`
+     *          to expose functionality via the CommandRouter.
+     */
+    virtual void registerCommands() {}
+
+    /**
      * @brief Gets the unique name of the module.
      * @details This is a pure virtual function and must be implemented by all derived classes.
      *          The name is used for logging and service location.
