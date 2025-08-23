@@ -42,12 +42,12 @@ jobs:
           # Move the binary to a directory in the system's PATH
           sudo mv ./bin/doxybook2 /usr/local/bin/
 
-          
+
       - name: 'Generate API Docs (Doxygen XML)'
         run: doxygen Doxyfile
 
       - name: 'Generate API Docs (Doxybook2 Markdown)'
-        run: doxybook2 --config doxybook.config.json
+        run: doxybook2 --input .doxygen/xml --output docs/05-api-reference --config doxybook.config.json
 
       - name: 'Set up Node.js'
         uses: actions/setup-node@v4
