@@ -2,7 +2,7 @@
 
 PROJECT_NAME           = "Nextino"
 OUTPUT_DIRECTORY       = ./.doxygen
-INPUT                  = ./src ./examples
+INPUT                  = ./src
 RECURSIVE              = YES
 
 GENERATE_HTML          = NO
