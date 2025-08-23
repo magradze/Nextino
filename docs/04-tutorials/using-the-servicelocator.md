@@ -236,6 +236,6 @@ You have now mastered both of Nextino's powerful communication patterns while fo
 
 ### Next Steps
 
-You have learned all the core concepts of Nextino. Now it's time to explore the API reference and start building your own amazing projects!
+Congratulations! 🎉 You have now mastered all the core concepts of Nextino, from creating modules to using both the `EventBus` and `ServiceLocator` for communication.
 
-➡️ **[API Reference (Coming Soon)](/api)**
+You are now fully equipped to start building your own amazing, structured, and scalable embedded applications. Happy coding! ❤️
