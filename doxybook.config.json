@@ -6,5 +6,6 @@
     "linkSuffix": "",
     "emptyFolders": true,
     "mainPageInRoot": true,
-    "mainPageName": "index"
+    "mainPageName": "index",
+    "templatesPath": "doxybook_templates" 
 }
