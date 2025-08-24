@@ -9,10 +9,13 @@ private:
     bool _ledState;
 
 public:
-    LedModule(const JsonObject &config);
+    // Constructor updated for multiple instances
+    LedModule(const char *instanceName, const JsonObject &config);
 
-    static BaseModule* create(const JsonObject& config) {
-        return new LedModule(config);
+    // Static create function updated to match the new factory signature
+    static BaseModule *create(const char *instanceName, const JsonObject &config)
+    {
+        return new LedModule(instanceName, config);
     }
 
     const char *getName() const override;

@@ -9,68 +9,57 @@ Nextino is rapidly evolving! This document provides a transparent view of what w
 
 ---
 
+## ✅ Version 0.3.0: Connectivity & Scalability
+
+This version transformed Nextino into a true IoT framework, adding foundational features for building complex, scalable, and connected devices.
+
+* **Core Architecture - Multiple Instances:**
+  * The framework now supports creating **multiple instances** of the same module type from an array-based configuration.
+  * A unique `instance_name` is now used for precise logging, resource management, and service location.
+* **Core Services:**
+  * **`DeviceIdentity`**: A new multi-platform service provides a persistent, unique ID for each device.
+  * **`CommandRouter`**: A new service acts as a central engine for text-based commands, allowing control from any source (Serial, MQTT, etc.).
+* **Connectivity Foundation:**
+  * **Declarative MQTT Interface:** The build system now parses `mqtt_interface` definitions from `config.json` files to create a "Single Source of Truth" for all MQTT topics (`generated_mqtt.h`).
+  * **(Proof of Concept) Connectivity Modules:** Basic, functional `NextinoWifi` (wrapping WiFiManager) and `MqttClientModule` modules have been developed to prove the new architecture.
+
 ## ✅ Version 0.2.0: Architecture Solidified
 
-This version established a rock-solid foundation with powerful, decoupled communication and a full suite of core services.
+This version established the rock-solid foundation for communication and core services.
 
-* **Core Services:**
-  * `SystemManager`: Central orchestrator for the entire framework lifecycle.
-  * `ModuleFactory`: For dynamic, configuration-driven module creation.
-  * `Scheduler`: Advanced non-blocking scheduler with task cancellation.
-  * `ResourceManager`: Complete hardware conflict prevention for GPIO, I2C, SPI, UART, ADC, and DAC.
-  * `EventBus`: For decoupled, one-to-many "publish-subscribe" communication.
-  * `ServiceLocator`: For direct, one-to-one "request-response" communication.
-* **Build System:**
-  * Advanced Python script for automatic module discovery and configuration generation.
-* **Documentation:**
-  * Official documentation website launched with a full CI/CD pipeline.
-  * Comprehensive tutorials for core concepts.
-* **Examples:**
-  * `01_Blink`: Demonstrates the basic "Plug-and-Play" philosophy.
-  * `02_Interactive_Led`: Showcases `EventBus` and `ServiceLocator` in action.
+* **Core Services:** `SystemManager`, `ModuleFactory`, `Scheduler` (with cancellation), `ResourceManager` (expanded), `EventBus`, and `ServiceLocator`.
+* **Build System:** Python script for automatic module discovery.
+* **Documentation:** Official Docusaurus website with CI/CD.
 
 ---
 
-## 🚧 Next Up: Version 0.3.0 - The "Connectivity & Scalability" Release
+## 🚧 Next Up: Version 0.4.0 - The "Polish & Production" Release
 
-The next major release will focus on making Nextino the best choice for building real-world, multi-component IoT devices and improving the overall developer experience.
+The next release will focus on refining the existing features, improving stability, and providing the tools needed for production-ready applications.
 
-### Core Architecture Enhancements
+### Core Features
 
-* **Multiple Module Instances:**
-  * The configuration system will be upgraded to support an **array of module definitions**. This will allow you to instantiate multiple modules of the same type (e.g., several `RelayModule` instances) from a single, clean configuration file.
-  * A new `instance_name` field will be introduced to uniquely identify each module instance for logging, `ServiceLocator`, and MQTT integration.
-* **Declarative MQTT Interface:**
-  * Module `config.json` files will support a new `mqtt_interface` object. This will allow developers to declaratively define the MQTT topics a module **publishes** to and **subscribes** from.
-  * A new build script will parse these definitions to create a centralized "Single Source of Truth" for all MQTT topics, eliminating manual errors and improving maintainability.
+* **Full Declarative MQTT Integration:**
+  * The `MqttClientModule` will be enhanced to **fully automate** subscriptions and message routing based on the `mqtt_interface` definitions, removing the need for manual `if/else` logic in the callback.
 * **Config Manager v2:**
-  * **Schema Validation:** Define a `schema.json` in your module to automatically validate its configuration.
-  * **Overlays:** Support for multiple configuration files (e.g., `config.default.json`, `config.local.json`) that can override default settings.
+  * **Schema Validation:** Define a `schema.json` in your module to automatically validate its `config.json` against a ruleset.
+  * **Configuration Overlays:** Support for multiple config files (e.g., `config.default.json`, `config.local.json`) to override default settings for different environments.
+* **Unit Testing Framework:**
+  * Provide official guides and tools for writing unit tests for your own modules, including mocking of Nextino's core services.
 
-### Core Services & Modules
+### Official Modules
 
-* **Command Router (CLI):**
-  * An optional core service that allows modules to register commands (e.g., `relay main_light on`).
-  * These commands can be invoked via the Serial Monitor, creating a powerful debugging and control interface.
-* **`WiFiManager` Module:** A robust, plug-and-play module for handling WiFi connectivity, credentials, and automatic reconnection.
-* **`MqttClient` Module:** A powerful MQTT module that will automatically integrate with the new `mqtt_interface` definitions, bridging the `EventBus` to your MQTT broker.
+* **Refine `NextinoWifi` & `MqttClient`:** Turn the proof-of-concept modules into robust, feature-complete official modules.
+* **Persistent Storage Module:** A standard module for easy key-value storage in EEPROM or LittleFS.
+* **First Sensor Module:** Release the first official sensor module (e.g., a BME280 module) as a template for the community.
 
 ---
 
-## 🔜 Further Down the Road (Post-v0.3.0)
+## 🔜 Further Down the Road (Post-v0.4.0)
 
-These are features we are planning for the long-term evolution of the framework.
-
-* **Advanced Task Handling:**
-  * Exploring async/await patterns or Promise-based tasks for more complex asynchronous operations.
-* **Hardware Abstraction Layer (HAL):**
-  * Introducing abstract interfaces (`IGpio`, `II2c`) to make modules fully platform-agnostic and easier to test.
-* **Unit Testing Overhaul:**
-  * Tools and guides for easily writing unit tests for your own modules, including mocking of core services.
-* **UI-Friendly Configuration:**
-  * A web-based or desktop tool to visually configure your project's `config.json` files.
-* **More Official Modules:**
-  * Sensors (BME280, DHT22, etc.), Displays (OLED), and Actuators (Servos, Relays).
+* **Hardware Abstraction Layer (HAL):** To make modules fully platform-agnostic.
+* **Advanced Task Handling:** Exploring `async/await` patterns.
+* **Visual Configuration Tools:** A UI-based tool for editing `config.json` files.
 
 ---
 
