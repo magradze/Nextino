@@ -17,13 +17,14 @@ Every Nextino module is a self-contained PlatformIO library. It must reside in t
 lib/
 └── MyAwesomeModule/
     ├── src/
-    │   ├── MyAwesomeModule.h         // 📜 The Public Contract (Header)
+    │   ├── MyAwesomeModule.h           // 📜 The Public Contract (Header)
     │   ├── MyAwesomeModule.cpp         // 🏗️ Lifecycle & Constructor
     │   ├── MyAwesomeModule_events.cpp  // 🧠 Event Handling Logic
     │   └── MyAwesomeModule_cmd.cpp     // ⌨️ Command Router Logic
     │
     ├── config.json                     // ⚙️ Default Configuration (Always an array!)
     ├── library.json                    // 📦 The Module's "Passport"
+    ├── schema.json                     // 📜 Configuration rules for validation
     └── README.md                       // 📖 User Manual
 ```
 
