@@ -1,6 +1,6 @@
 {
   "name": "Nextino",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "A structured, scalable, and modern C++ framework for Arduino, ESP32, STM32, and beyond.",
   "keywords": "framework, iot, embedded, architecture, arduino, esp32, stm32, modular, scheduler, eventbus",
   "repository": {
