@@ -57,6 +57,7 @@ void SystemManager::begin(const char *configJson)
     for (JsonObject moduleConf : modulesConfig)
     {
         const char *moduleType = moduleConf["type"];
+        const char *instanceName = moduleConf["instance_name"] | moduleType;
         if (!moduleType)
             continue;
 
@@ -72,7 +73,7 @@ void SystemManager::begin(const char *configJson)
 
                 if (strcmp(resourceTypeStr, "gpio") == 0 && resourceObj["pin"].is<int>())
                 {
-                    if (!ResourceManager::getInstance().lock(ResourceType::GPIO, resourceObj["pin"], moduleType))
+                    if (!ResourceManager::getInstance().lock(ResourceType::GPIO, resourceObj["pin"], instanceName))
                     {
                         allResourcesLocked = false;
                     }
@@ -82,7 +83,7 @@ void SystemManager::begin(const char *configJson)
                 {
                     // Convert hex string "0x76" to integer
                     int address = strtol(resourceObj["address"], NULL, 16);
-                    if (!ResourceManager::getInstance().lock(ResourceType::I2C_ADDRESS, address, moduleType))
+                    if (!ResourceManager::getInstance().lock(ResourceType::I2C_ADDRESS, address, instanceName))
                     {
                         allResourcesLocked = false;
                     }
@@ -90,7 +91,7 @@ void SystemManager::begin(const char *configJson)
                 // --- SPI Resource (by CS Pin) ---
                 else if (strcmp(resourceTypeStr, "spi") == 0 && resourceObj["cs_pin"].is<int>())
                 {
-                    if (!ResourceManager::getInstance().lock(ResourceType::SPI_CS_PIN, resourceObj["cs_pin"], moduleType))
+                    if (!ResourceManager::getInstance().lock(ResourceType::SPI_CS_PIN, resourceObj["cs_pin"], instanceName))
                     {
                         allResourcesLocked = false;
                     }
@@ -98,7 +99,7 @@ void SystemManager::begin(const char *configJson)
                 // --- UART Resource ---
                 else if (strcmp(resourceTypeStr, "uart") == 0 && resourceObj["port"].is<int>())
                 {
-                    if (!ResourceManager::getInstance().lock(ResourceType::UART_PORT, resourceObj["port"], moduleType))
+                    if (!ResourceManager::getInstance().lock(ResourceType::UART_PORT, resourceObj["port"], instanceName))
                     {
                         allResourcesLocked = false;
                     }
@@ -106,7 +107,7 @@ void SystemManager::begin(const char *configJson)
                 // --- ADC Resource ---
                 else if (strcmp(resourceTypeStr, "adc") == 0 && resourceObj["pin"].is<int>())
                 {
-                    if (!ResourceManager::getInstance().lock(ResourceType::ADC_PIN, resourceObj["pin"], moduleType))
+                    if (!ResourceManager::getInstance().lock(ResourceType::ADC_PIN, resourceObj["pin"], instanceName))
                     {
                         allResourcesLocked = false;
                     }
@@ -114,7 +115,7 @@ void SystemManager::begin(const char *configJson)
                 // --- DAC Resource ---
                 else if (strcmp(resourceTypeStr, "dac") == 0 && resourceObj["pin"].is<int>())
                 {
-                    if (!ResourceManager::getInstance().lock(ResourceType::DAC_PIN, resourceObj["pin"], moduleType))
+                    if (!ResourceManager::getInstance().lock(ResourceType::DAC_PIN, resourceObj["pin"], instanceName))
                     {
                         allResourcesLocked = false;
                     }
@@ -122,7 +123,7 @@ void SystemManager::begin(const char *configJson)
                 else
                 {
                     // Log a warning if the resource type is unknown or parameters are missing
-                    NEXTINO_CORE_LOG(LogLevel::Warn, "SysManager", "Module '%s' has an unknown or malformed resource object. Type: '%s'. Skipping.", moduleType, resourceTypeStr);
+                    NEXTINO_CORE_LOG(LogLevel::Warn, "SysManager", "Module '%s' has an unknown or malformed resource object. Type: '%s'. Skipping.", instanceName, resourceTypeStr);
                 }
             }
         }
@@ -140,12 +141,32 @@ void SystemManager::begin(const char *configJson)
     Logger::getInstance().logf(LogLevel::Info, true, "SysManager", "Phase 2: Creating and registering module instances...");
     for (JsonObject moduleConf : modulesConfig)
     {
+        // Get the module type as a C-style string, which is what ArduinoJson provides.
         const char *type = moduleConf["type"];
+        if (!type)
+        {
+            NEXTINO_CORE_LOG(LogLevel::Warn, "SysManager", "Skipping a module config entry with no 'type'.");
+            continue;
+        }
+
+        // Use 'instance_name' if available, otherwise fall back to the module 'type'.
+        const char *instanceName = moduleConf["instance_name"] | type;
+
+        // Pass the config object. Create an empty one if it's missing.
         JsonObject config = moduleConf["config"];
-        BaseModule *module = ModuleFactory::getInstance().createModule(type, config);
+        if (config.isNull())
+        {
+            NEXTINO_CORE_LOG(LogLevel::Warn, "SysManager", "Module config for '%s' is null or missing. Creating with empty config.", instanceName);
+        }
+
+        // Call the updated ModuleFactory method which now accepts const char* for the type.
+        // No std::string conversion is needed here anymore.
+        BaseModule *module = ModuleFactory::getInstance().createModule(type, instanceName, config);
+
         if (module)
         {
             registerModule(module);
+            NEXTINO_CORE_LOG(LogLevel::Debug, "SysManager", "Module '%s' (%s) created and registered.", instanceName, type);
         }
     }
 
@@ -160,6 +181,13 @@ void SystemManager::begin(const char *configJson)
     for (auto *module : _modules)
     {
         module->start();
+    }
+
+    // --- PHASE 3.5: COMMAND REGISTRATION ---
+    Logger::getInstance().logf(LogLevel::Info, true, "SysManager", "Phase 3.5: Registering all module commands...");
+    for (auto *module : _modules)
+    {
+        module->registerCommands();
     }
 }
 

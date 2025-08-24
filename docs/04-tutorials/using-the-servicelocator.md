@@ -1,78 +1,52 @@
 ---
-sidebar_position: 4 
+sidebar_position: 4
 title: 'Using the ServiceLocator'
 ---
 
 # 📞 Using the ServiceLocator for Direct Control
 
-While the `EventBus` is perfect for broadcasting notifications (one-to-many), sometimes one module needs to **directly command** another (one-to-one). For this, Nextino provides the **`ServiceLocator`** pattern.
+While the `EventBus` is perfect for broadcasting notifications (one-to-many), sometimes you need one module to **directly command a specific instance** of another module (one-to-one). This is where the **`ServiceLocator`** shines. 🎯
 
-This pattern allows a module to "provide" itself as a named service. Any other module can then "get" a pointer to this service and call its public methods directly. It's a powerful way to achieve **one-to-one communication** while still keeping the modules decoupled.
+The `ServiceLocator` acts like a central phone book 📖 for your project. A module can "provide" itself as a uniquely named service, and any other module can then "get" that specific service to call its public methods.
+
+This tutorial will demonstrate how to control one specific LED out of two, using its unique `instance_name`.
 
 ---
 
 ## 🎯 The Goal
 
-We will build a system where:
+We will build a system with multiple module instances:
 
-1. Our `LedModule` registers itself as a service named `"led_service"`.
-2. The service's API logic (`turnOn`, `turnOff`) will live in its own dedicated `LedModule_api.cpp` file.
-3. We will create a new, simple `ControlModule` that finds the `"led_service"` and commands it to blink, demonstrating direct control.
+1. **Two `LedModule` instances:** `status_led` and `error_led`, each with a public API (`turnOn`, `turnOff`). Each one will register itself as a unique service (e.g., `"LedModule:status_led"`).
+2. **`ControlModule`**: A new module that, upon startup, will find **only the `error_led`** service and command it to blink an S.O.S. pattern, leaving the `status_led` untouched.
+
+This demonstrates how to achieve precise, direct control in a multi-component system.
 
 ## Step 1: Make `LedModule` a "Service Provider"
 
-First, we need to update our `LedModule` to expose a public API and register itself as a service. We will follow our best practice of separating the API logic into its own file.
+First, we'll update our `LedModule` to expose a public API and, crucially, to register itself with a unique service name built from its `instance_name`.
 
-### 1.1. Update the File Structure
+### 1.1. Update the Header (`LedModule.h`)
 
-Let's add a new file to our `LedFlasher` library for the API implementation.
-
-```plaintext
-lib/LedFlasher/
-└── src/
-    ├── LedModule.h
-    ├── LedModule.cpp         // Constructor & Lifecycle
-    ├── LedModule_events.cpp  // Event handling logic
-    └── LedModule_api.cpp     // ✨ NEW: Service API logic
-```
-
-### 1.2. Update the Header (`LedModule.h`)
-
-Add the `turnOn()` and `turnOff()` methods to the public interface. The header file defines the "contract" for what the service can do.
+We must first ensure our `LedModule` is compatible with the `instance_name` architecture.
 
 ```cpp title="lib/LedFlasher/src/LedModule.h"
 #pragma once
 #include <Nextino.h>
+#include <string> // Required for std::string operations
 
 class LedModule : public BaseModule {
 private:
-    // Define clear states for the module
-    enum class LedState {
-        OFF,
-        ON,
-        BLINKING
-    };
-
-    // Configuration
     int _pin;
-    unsigned long _interval;
-
-    // Internal State
-    uint32_t _taskHandle;
-    LedState _currentState;
-
-    // --- Event Handlers ---
-    void handleShortPress(void* payload);
-    void handleLongPress(void* payload);
-
-    // Private method to change state cleanly
-    void setState(LedState newState);
+    // ... other private members
 
 public:
-    LedModule(const JsonObject& config);
+    // Constructor updated for multiple instances
+    LedModule(const char* instanceName, const JsonObject& config);
     
-    static BaseModule* create(const JsonObject& config) {
-        return new LedModule(config);
+    // Create function updated for multiple instances
+    static BaseModule* create(const char* instanceName, const JsonObject& config) {
+        return new LedModule(instanceName, config);
     }
 
     // --- BaseModule Lifecycle Methods ---
@@ -86,93 +60,97 @@ public:
 };
 ```
 
-### 1.3. Update the Main Implementation (`LedModule.cpp`)
+### 1.2. Update the Main Implementation (`LedModule.cpp`)
 
-The main `.cpp` file is the "orchestrator". Its `init()` method is the perfect place to register the service with the `ServiceLocator`.
+The key change is in the `init()` method. Instead of a hard-coded service name, we will generate a unique one. The API methods (`turnOn`/`turnOff`) can be placed in a separate `LedModule_api.cpp` for better organization.
 
 ```cpp title="lib/LedFlasher/src/LedModule.cpp"
 #include "LedModule.h"
 
-// ... (Constructor and getName() remain the same)
+// Constructor updated to call the parent
+LedModule::LedModule(const char* instanceName, const JsonObject& config)
+    : BaseModule(instanceName) {
+    _pin = config["resource"]["pin"];
+    // ... other initializations
+}
+
+const char* LedModule::getName() const { return "LedModule"; }
 
 void LedModule::init() {
     pinMode(_pin, OUTPUT);
-    digitalWrite(_pin, LOW);
     
-    // ✨ Register this instance as a service!
-    NextinoServices().provide("led_service", this);
+    // ✨ Create and provide a UNIQUE service name ✨
+    // e.g., for an instance_name "error_led", the service will be "LedModule:error_led"
+    std::string serviceName = std::string(getName()) + ":" + getInstanceName();
+    NextinoServices().provide(serviceName.c_str(), this);
 
-    NEXTINO_LOGI(getName(), "Initialized on pin %d and provided 'led_service'.", _pin);
+    // Use getInstanceName() for unique logs
+    NEXTINO_LOGI(getInstanceName(), "Initialized on pin %d and provided service '%s'.", _pin, serviceName.c_str());
 }
 
-// ... (start() method remains the same)
+// ... (start() and other methods)
 ```
 
-### 1.4. Create the API Implementation (`LedModule_api.cpp`)
+`(Implementation for turnOn/turnOff goes here or in a separate _api.cpp file)`
 
-This new file will contain the actual logic for the public API methods. This keeps our main `.cpp` file clean and focused on the module's lifecycle.
+Our `LedModule` is now a fully-fledged, instance-aware service provider! 🏆
 
-```cpp title="lib/LedFlasher/src/LedModule_api.cpp"
-#include "LedModule.h"
+## Step 2: Configure Multiple LEDs
 
-// --- Public API Implementation ---
+Let's tell our project we want two LEDs. We do this in a `config.json` file inside a library (e.g., `lib/ProjectHardware`).
 
-void LedModule::turnOn() {
-    // For simplicity, this just turns the LED on.
-    // In a real module, this would interact with the state machine.
-    digitalWrite(_pin, HIGH);
-    NEXTINO_LOGI(getName(), "Turned ON via API call.");
-}
-
-void LedModule::turnOff() {
-    digitalWrite(_pin, LOW);
-    NEXTINO_LOGI(getName(), "Turned OFF via API call.");
-}
+```json title="lib/ProjectHardware/config.json"
+[
+  {
+    "type": "LedModule",
+    "instance_name": "status_led",
+    "config": {
+      "resource": { "type": "gpio", "pin": 2 }
+    }
+  },
+  {
+    "type": "LedModule",
+    "instance_name": "error_led",
+    "config": {
+      "resource": { "type": "gpio", "pin": 4 }
+    }
+  }
+]
 ```
 
-Our `LedModule` is now a perfectly structured service provider! 🏆
+## Step 3: Create the `ControlModule` (Service Consumer)
 
-## Step 2: Create the `ControlModule` (Service Consumer)
+Now, let's create a module that will find and use **only the `error_led`**. Create a new library `lib/Controller`.
 
-Now, let's create a new module that will find and use our service. The code for this module remains the same as before, as it only interacts with the public `LedModule.h` interface and doesn't care how the implementation is structured. This is the beauty of encapsulation!
-
-Create a new library in your `lib` folder named `Controller`.
-
-### 2.1. `config.json` and `library.json`
+### 3.1. `config.json` and `library.json`
 
 ```json title="lib/Controller/config.json"
-{
-  "type": "ControlModule",
-  "config": {}
-}
+[
+  {
+    "type": "ControlModule",
+    "instance_name": "main_controller"
+  }
+]
 ```
 
-```json title="lib/Controller/library.json"
-{
-    "name": "Controller",
-    "version": "1.0.0",
-    "description": "A module to demonstrate the ServiceLocator.",
-    "keywords": "nextino-module, controller, example",
-    "dependencies": { "Nextino": "*" }
-}
-```
+_(The manifest `library.json` is standard)_
 
-### 2.2. The Code (`ControlModule.h` & `ControlModule.cpp`)
+### 3.2. The Code (`ControlModule.h` & `ControlModule.cpp`)
 
 ```cpp title="lib/Controller/src/ControlModule.h"
 #pragma once
 #include <Nextino.h>
-#include "LedModule.h" // ⚠️ See note below!
+#include "LedModule.h" // Note: See previous tutorial for dependency explanation
 
 class ControlModule : public BaseModule {
 private:
-    LedModule* _led; // A pointer to hold the located service
+    LedModule* _errorLed; // A pointer to hold the specific LED service
 
 public:
-    ControlModule(const JsonObject& config);
+    ControlModule(const char* instanceName, const JsonObject& config);
     
-    static BaseModule* create(const JsonObject& config) {
-        return new ControlModule(config);
+    static BaseModule* create(const char* instanceName, const JsonObject& config) {
+        return new ControlModule(instanceName, config);
     }
 
     const char* getName() const override;
@@ -181,61 +159,51 @@ public:
 };
 ```
 
-:::danger ⚠️ A Note on Including Headers
-Wait, didn't we say "modules must never directly include each other's header files"? Yes!
-
-In a **perfectly decoupled system**, the `ControlModule` would not know about the `LedModule` class. It would ask the `ServiceLocator` for a generic `ILedService` interface.
-
-However, for simplicity in this tutorial, we are including the concrete `LedModule.h` header. This creates a **one-way dependency** (`ControlModule` depends on `LedModule`, but not vice-versa). This is an acceptable trade-off for simpler projects but should be avoided in large, complex applications by using abstract interfaces.
-:::
-
 ```cpp title="lib/Controller/src/ControlModule.cpp"
 #include "ControlModule.h"
 
-ControlModule::ControlModule(const JsonObject& config) {
-    _led = nullptr; // Always initialize pointers to nullptr!
+ControlModule::ControlModule(const char* instanceName, const JsonObject& config)
+    : BaseModule(instanceName) {
+    _errorLed = nullptr; // Always initialize pointers!
 }
 
 const char* ControlModule::getName() const { return "ControlModule"; }
 
 void ControlModule::init() {
-    // In init(), we find the service.
-    // We do this here to ensure the service is available before we try to use it in start().
-    _led = NextinoServices().get<LedModule>("led_service");
+    // We look for a VERY SPECIFIC service by its unique composite name
+    _errorLed = NextinoServices().get<LedModule>("LedModule:error_led");
 
-    if (_led) {
-        NEXTINO_LOGI(getName(), "Successfully located 'led_service'.");
+    if (_errorLed) {
+        NEXTINO_LOGI(getInstanceName(), "Successfully located 'LedModule:error_led'.");
     } else {
-        NEXTINO_LOGE(getName(), "Failed to locate 'led_service'! The module may not work correctly.");
+        NEXTINO_LOGE(getInstanceName(), "Failed to locate 'LedModule:error_led'!");
     }
 }
 
 void ControlModule::start() {
-    // Now that we have the service, let's use it!
-    if (_led) {
-        NEXTINO_LOGI(getName(), "Commanding LED to blink a pattern.");
-        // A quick blink pattern to show we have control
-        NextinoScheduler().scheduleOnce(500, [this]() { _led->turnOn(); });
-        NextinoScheduler().scheduleOnce(700, [this]() { _led->turnOff(); });
-        NextinoScheduler().scheduleOnce(900, [this]() { _led->turnOn(); });
-        NextinoScheduler().scheduleOnce(1100, [this]() { _led->turnOff(); });
+    if (_errorLed) {
+        NEXTINO_LOGI(getInstanceName(), "Commanding error_led to blink S.O.S.");
+        // S.O.S: 3 short, 3 long, 3 short
+        // For simplicity, we'll just blink it fast.
+        _errorLed->turnOn(); // We can now call its public methods directly!
+        NextinoScheduler().scheduleOnce(100, [this]() { _errorLed->turnOff(); });
+        NextinoScheduler().scheduleOnce(200, [this]() { _errorLed->turnOn(); });
+        NextinoScheduler().scheduleOnce(300, [this]() { _errorLed->turnOff(); });
     }
 }
 ```
 
-## Step 3: Run and See the Result
+## Step 4: Run and See the Result 🔬
 
-1. Add the new `Controller` library to your `platformio.ini`.
+1. Add all necessary libraries (`LedFlasher`, `Controller`, etc.) to your `platformio.ini`.
 2. Upload the code.
 
-When the system boots, you will see in the logs that the `ControlModule` finds the `led_service` and then, after a short delay, the LED will blink twice, commanded directly by the `ControlModule`.
+When the system boots, you will see the `status_led` remain off. The `ControlModule` will find only the `error_led` service and cause it to blink rapidly, demonstrating precise, instance-based control.
 
-You have now mastered both of Nextino's powerful communication patterns while following best practices for code organization! 🎉
+You have now mastered both of Nextino's powerful communication patterns! 🎉
 
 ---
 
 ### Next Steps
 
-Congratulations! 🎉 You have now mastered all the core concepts of Nextino, from creating modules to using both the `EventBus` and `ServiceLocator` for communication.
-
-You are now fully equipped to start building your own amazing, structured, and scalable embedded applications. Happy coding! ❤️
+Congratulations! 🎉 You are now equipped with the core knowledge to build amazing, structured, and scalable embedded applications with Nextino. Happy coding! ❤️

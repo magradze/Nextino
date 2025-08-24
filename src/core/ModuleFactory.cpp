@@ -21,21 +21,28 @@ ModuleFactory& ModuleFactory::getInstance() {
     return instance;
 }
 
-// Registers a new module type and its creation function
-void ModuleFactory::registerModule(const std::string& type, ModuleCreationFunction func) {
-    NEXTINO_CORE_LOG(LogLevel::Debug, "ModFactory", "Registering type '%s'", type.c_str());
-    registry[type] = func;
+// Registers a new module type. Accepts a const char* for easier use.
+void ModuleFactory::registerModule(const char *type, ModuleCreationFunction func)
+{
+    NEXTINO_CORE_LOG(LogLevel::Debug, "ModFactory", "Registering type '%s'", type);
+    // Convert to std::string for storing in the map
+    registry[std::string(type)] = func;
 }
 
-// Creates a module object based on type and configuration
-BaseModule* ModuleFactory::createModule(const std::string& type, const JsonObject& config) {
+// Creates a module object. Accepts a const char* for the type.
+BaseModule *ModuleFactory::createModule(const char *type, const char *instanceName, const JsonObject &config)
+{
+    // Convert to std::string for map lookup
+    std::string type_str(type);
+
     // Check if the type is registered
-    if (registry.find(type) != registry.end()) {
-        NEXTINO_CORE_LOG(LogLevel::Debug, "ModFactory", "Creating module of type '%s'...", type.c_str());
-        // Call the stored function and pass the configuration
-        return registry[type](config);
+    if (registry.find(type_str) != registry.end())
+    {
+        NEXTINO_CORE_LOG(LogLevel::Debug, "ModFactory", "Creating module instance '%s' of type '%s'...", instanceName, type);
+        // Call the stored creation function, passing both instanceName and config
+        return registry[type_str](instanceName, config);
     }
 
-    NEXTINO_CORE_LOG(LogLevel::Error, "ModFactory", "Unknown module type '%s'", type.c_str());
+    NEXTINO_CORE_LOG(LogLevel::Error, "ModFactory", "Unknown module type '%s'", type);
     return nullptr; // If the type is not found, return nullptr
 }

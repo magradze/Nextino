@@ -1,25 +1,25 @@
 ---
 sidebar_position: 3
-title: 'Your First Project'
+title: '💡 Your First Project'
 ---
 
 # 💡 Your First Project: Plug-and-Play Blink
 
-Let's build the "Hello, World!" of the embedded world—a blinking LED—but with the power and structure of the Nextino framework. This tutorial will demonstrate the core **Plug-and-Play** and **Configuration-Driven** philosophy of Nextino.
+Welcome to Nextino! Let's build the "Hello, World!" of the embedded world—a blinking LED—but with the power and structure of the Nextino framework. This tutorial will demonstrate the core **Plug-and-Play**, **Configuration-Driven**, and **Multiple Instance** philosophies of Nextino.
 
-By the end, you will have a fully functional, modular application with a minimal `main.cpp`, and you'll understand how Nextino automatically discovers and manages your modules.
+By the end, you will have a fully functional, modular application with an incredibly minimal `main.cpp`, and you'll understand how Nextino automatically discovers and manages your hardware.
 
 ---
 
 ## 🎯 The Goal
 
-We will create a simple project that blinks an LED. However, instead of writing the logic directly in `main.cpp`, we will create a self-contained, reusable `LedFlasher` module.
+We will create a simple project that blinks a single LED. However, instead of writing the logic directly in `main.cpp`, we will create a completely self-contained, reusable `LedModule`.
 
 ## Step 1: Project Setup
 
-If you haven't already, create a new PlatformIO project and [install the Nextino framework](./installation.md) as described in the previous guide.
+If you haven't already, create a new PlatformIO project and follow the [Installation guide](./installation) to add the Nextino framework.
 
-Your `platformio.ini` should look like this:
+Your `platformio.ini` should look something like this:
 
 ```ini title="platformio.ini"
 [env:esp32dev]
@@ -27,39 +27,45 @@ platform = espressif32
 board = esp32dev
 framework = arduino
 monitor_speed = 115200
-monitor_filters = colorize
 
 lib_deps =
     https://github.com/magradze/Nextino.git
 ```
 
-## Step 2: Create the `LedFlasher` Module
+## Step 2: Create the `LedModule` 💡
 
-Modules in Nextino are just PlatformIO libraries. Let's create one for our LED.
+Modules in Nextino are just standard PlatformIO libraries. They live in your project's `lib` folder.
 
 1. Inside your project's `lib` folder, create a new folder named `LedFlasher`.
 2. This new library needs three key files to become a Nextino module.
 
 ### 2.1. The Configuration (`config.json`)
 
-This file defines the default parameters for our module.
+This file defines the **default instance(s)** for our module. As per Nextino's best practice, the root element is **always an array `[]`**.
 
 ```json title="lib/LedFlasher/config.json"
-{
-  "type": "LedModule",
-  "config": {
-    "pin": 2,
-    "interval_ms": 500
+[
+  {
+    "type": "LedModule",
+    "instance_name": "onboard_led",
+    "config": {
+      "resource": {
+        "type": "gpio",
+        "pin": 2
+      },
+      "blink_interval_ms": 500
+    }
   }
-}
+]
 ```
 
-* `"type": "LedModule"`: This is the unique string identifier for our module class.
-* `"config"`: An object containing the specific settings for this module.
+* `"type"`: The C++ class name of our module.
+* `"instance_name"`: A unique name for this specific LED.
+* `"resource"`: The hardware this LED needs. The `ResourceManager` will protect this pin for us!
 
 ### 2.2. The Manifest (`library.json`)
 
-This file tells PlatformIO about our library and, crucially, marks it as a Nextino module for our build script.
+This is the module's "passport," telling PlatformIO about it. The special `"nextino-module"` keyword makes it discoverable by our build script.
 
 ```json title="lib/LedFlasher/library.json"
 {
@@ -67,15 +73,9 @@ This file tells PlatformIO about our library and, crucially, marks it as a Nexti
     "version": "1.0.0",
     "description": "A simple LED flasher module for the Nextino framework.",
     "keywords": "nextino-module, led, flasher",
-    "dependencies": {
-        "Nextino": "*"
-    }
+    "dependencies": { "Nextino": "*" }
 }
 ```
-
-:::tip
-The `"keywords": "nextino-module"` part is the magic that allows our build script to automatically discover this library!
-:::
 
 ### 2.3. The Code (`LedModule.h` & `LedModule.cpp`)
 
@@ -87,18 +87,19 @@ Create a `src` folder inside `lib/LedFlasher` and add the following files.
 
 class LedModule : public BaseModule {
 private:
-    int ledPin;
-    unsigned long blinkInterval;
+    int _pin;
+    unsigned long _interval;
+    bool _ledState;
 
 public:
-    LedModule(const JsonObject& config);
-    
-    // Required by the ModuleFactory
-    static BaseModule* create(const JsonObject& config) {
-        return new LedModule(config);
+    // Constructor must accept an instanceName for multiple-instance support
+    LedModule(const char* instanceName, const JsonObject& config);
+
+    // Static create function must match the new ModuleFactory signature
+    static BaseModule* create(const char* instanceName, const JsonObject& config) {
+        return new LedModule(instanceName, config);
     }
 
-    // --- BaseModule Lifecycle Methods ---
     const char* getName() const override;
     void init() override;
     void start() override;
@@ -108,96 +109,104 @@ public:
 ```cpp title="lib/LedFlasher/src/LedModule.cpp"
 #include "LedModule.h"
 
-LedModule::LedModule(const JsonObject& config) {
-    // Read parameters from the JSON config, with default values
-    ledPin = config["pin"] | LED_BUILTIN;
-    blinkInterval = config["interval_ms"] | 1000;
+// The constructor receives the unique instanceName and passes it to the parent BaseModule
+LedModule::LedModule(const char* instanceName, const JsonObject& config)
+    : BaseModule(instanceName) {
+    
+    // Read pin from the "resource" object for ResourceManager compatibility
+    _pin = config["resource"]["pin"];
+    _interval = config["blink_interval_ms"] | 1000;
+    _ledState = false; // Start with the LED off
 }
 
+// getName() returns the generic TYPE of the module
 const char* LedModule::getName() const {
     return "LedModule";
 }
 
 void LedModule::init() {
-    pinMode(ledPin, OUTPUT);
-    NEXTINO_LOGI(getName(), "Initialized on pin %d.", ledPin);
+    pinMode(_pin, OUTPUT);
+    digitalWrite(_pin, _ledState);
+    // Use getInstanceName() for logs to show WHICH instance is talking!
+    NEXTINO_LOGI(getInstanceName(), "Initialized on pin %d.", _pin);
 }
 
 void LedModule::start() {
-    NextinoScheduler().scheduleRecurring(blinkInterval, [this]() {
-        digitalWrite(ledPin, !digitalRead(ledPin));
+    NextinoScheduler().scheduleRecurring(_interval, [this]() {
+        _ledState = !_ledState;
+        digitalWrite(_pin, _ledState);
     });
-    NEXTINO_LOGI(getName(), "Blink task scheduled every %lu ms.", blinkInterval);
+    NEXTINO_LOGI(getInstanceName(), "Blink task scheduled every %lu ms.", _interval);
 }
 ```
 
-## Step 3: The Minimal `main.cpp`
+## Step 3: The Minimal `main.cpp` ✨
 
-Now for the best part. Your main application file remains incredibly clean.
+Now for the best part. Your main application file is incredibly clean and simple.
 
 ```cpp title="src/main.cpp"
 #include <Arduino.h>
 #include <Nextino.h>
 
 // This header is auto-generated by Nextino's build script!
+// It contains the aggregated configuration and the `registerAllModuleTypes()` function.
 #include "generated_config.h"
 
 void setup() {
-    // 1. Initialize the Logger
+    // 1. Initialize the Logger (always first!)
     Logger::getInstance().begin(LogLevel::Debug);
+
+    // A small delay to ensure you can open the Serial Monitor in time to see boot messages.
+    delay(2000);
     
     NEXTINO_LOGI("Main", "--- Nextino Blink Demo ---");
 
-    // 2. Register all discovered module types
+    // 2. Register all discovered module types with the factory.
     registerAllModuleTypes();
 
-    // 3. Start the system
-    NextinoSystem().begin();
+    // 3. Start the system by passing the auto-generated config.
+    // The SystemManager handles everything else: resource locking, instantiation, and lifecycles.
+    NextinoSystem().begin(projectConfigJson);
     
     NEXTINO_LOGI("Main", "System is running.");
 }
 
 void loop() {
+    // Just let the Nextino system do its thing.
     NextinoSystem().loop();
 }
 ```
 
-Notice that `main.cpp` has **no direct reference** to `LedModule`. It doesn't know what modules are in the project—and it doesn't need to!
+Notice that `main.cpp` has **no direct reference** to `LedModule`. It doesn't know what hardware is in the project—and it doesn't need to!
 
-## Step 4: Build and Upload
+## Step 4: Build and Upload 🚀
 
-1. Add the `LedFlasher` module to your project's dependencies.
+1. Add the `LedFlasher` module to your project's dependencies in `platformio.ini`.
 
     ```ini title="platformio.ini"
     ; ... other settings
     lib_deps =
         https://github.com/magradze/Nextino.git
-        lib/LedFlasher ; Tells PIO to use the local library
+        lib/LedFlasher ; Tells PIO to find the module in the local lib folder
     ```
 
 2. Click the **"Upload and Monitor"** button in PlatformIO.
 
-The build script will run, find your `LedFlasher` module, generate the configuration, and your `main.cpp` will bring it to life. You should see the logs in the Serial Monitor and your LED will start blinking!
+The build script will run, find your `LedModule`, generate the configuration, and your `main.cpp` will bring it to life. You should see the logs in the Serial Monitor and your LED will start blinking!
 
-:::note 💡 Troubleshooting: My Serial Monitor is Empty!
-Sometimes, your device (especially a fast one like an ESP32) will boot up and print all its initial logs in milliseconds, long before you can open the Serial Monitor. This might make it seem like your program is frozen or not working.
-
-This is a normal "race condition" between your fast microcontroller and your human reaction time.
-
-**The Solution is Simple:**
+:::tip 💡 Troubleshooting: My Serial Monitor is Empty!
+Sometimes, your device boots and prints logs in milliseconds, before you can open the Serial Monitor. If you miss the boot messages:
 
 1. Keep the Serial Monitor window open.
-2. Press the physical **RESET** (or RST/EN) button on your development board.
+2. Press the physical **RESET** button on your board.
 
-Your device will restart, and because the Serial Monitor is already open and listening, you will see all the boot-up messages from the very beginning, including any potential configuration errors from the `ResourceManager`.
-
-**Pro Tip:** PlatformIO's **"Upload and Monitor"** command automates this for you. It uploads the code and immediately opens the monitor, catching the device right as it reboots.
+Your device will restart, and you'll see all messages from the beginning, including any errors from the `ResourceManager`. The `delay(2000)` in our `main.cpp` helps prevent this.
 :::
 
 ---
 
 ### Next Steps
 
-You've now experienced the power of Nextino's core philosophy. Let's dive deeper into the architecture.
+Congratulations! You've now experienced the power of Nextino's core philosophy. Now let's dive deeper into what you can do.
 
-➡️ **[Core Concepts](/core-concepts/architecture-overview)**
+➡️ **[Creating a Custom Module](/tutorials/creating-a-custom-module)**

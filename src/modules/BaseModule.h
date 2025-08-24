@@ -25,11 +25,23 @@
  *          and override its virtual methods to implement their specific logic.
  */
 class BaseModule {
+protected:
+    /**
+     * @brief The unique instance name for this module instance.
+     */
+    const char *_instanceName;
+
 public:
     /**
      * @brief Virtual destructor.
      */
     virtual ~BaseModule() {}
+
+    /**
+     * @brief Base constructor for all modules.
+     * @param instanceName The unique name for this specific module instance.
+     */
+    BaseModule(const char *instanceName) : _instanceName(instanceName) {}
 
     /**
      * @brief Called once by the SystemManager during the initial setup phase.
@@ -54,10 +66,28 @@ public:
     virtual void loop() {}
 
     /**
+     * @brief Called once by the SystemManager to allow the module to register its commands.
+     * @details Override this method in your module and use `NextinoCommands().registerCommand()`
+     *          to expose functionality via the CommandRouter.
+     */
+    virtual void registerCommands() {}
+
+    /**
      * @brief Gets the unique name of the module.
      * @details This is a pure virtual function and must be implemented by all derived classes.
      *          The name is used for logging and service location.
      * @return A constant string representing the module's name.
      */
     virtual const char* getName() const = 0;
+
+    /**
+     * @brief Gets the unique instance name assigned in the configuration.
+     * @details If no `instance_name` is provided in the config, this will be
+     *          the same as the module type (getName()).
+     * @return A constant string representing the instance's unique name.
+     */
+    const char *getInstanceName() const
+    {
+        return _instanceName;
+    }
 };
