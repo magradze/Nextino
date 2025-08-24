@@ -1,6 +1,6 @@
 ---
 sidebar_position: 7
-title: '⌨️ The Command Router'
+title: 'The Command Router'
 ---
 
 # ⌨️ The Command Router

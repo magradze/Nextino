@@ -1,6 +1,6 @@
 ---
 sidebar_position: 3
-title: '💡 Your First Project'
+title: 'Your First Project'
 ---
 
 # 💡 Your First Project: Plug-and-Play Blink

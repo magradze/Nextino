@@ -1,10 +1,13 @@
-{
-  "type": "LedModule",
-  "config": {
-    "resource": {
-      "type": "gpio",
-      "pin": 2
-    },
-    "blink_interval_ms": 500
+[
+  {
+    "type": "LedModule",
+    "instance_name": "onboard_led",
+    "config": {
+      "resource": {
+        "type": "gpio",
+        "pin": 2
+      },
+      "blink_interval_ms": 500
+    }
   }
-}
+]
