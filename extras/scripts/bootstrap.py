@@ -23,7 +23,7 @@ try:
     # --- END PATH INJECTION ---
 
     # Now, with the path correctly set, import our modules.
-    from nextino_scripts import config_aggregator, code_generator
+    from nextino_scripts import config_aggregator, code_generator, mqtt_generator
 
 except Exception as e:
     print(f"FATAL ERROR: Could not set up Nextino build environment.", file=sys.stderr)
@@ -52,6 +52,13 @@ def main(build_env):
         f.write(header_content)
 
     print(f"--- [Nextino Bootstrap] Finished: '{generated_header_path}' created. ---")
+    
+    mqtt_header_content = mqtt_generator.generate_mqtt_header(module_data)
+    if mqtt_header_content:
+        generated_mqtt_header_path = os.path.join(project_include_dir, mqtt_generator.GENERATED_HEADER_NAME)
+        with open(generated_mqtt_header_path, 'w', encoding='utf-8') as f:
+            f.write(mqtt_header_content)
+        print(f"--- [Nextino Bootstrap] Finished: '{generated_mqtt_header_path}' created. ---")
 
     build_env.Prepend(CPPPATH=[project_include_dir])
     print(f"--- [Nextino] Added '{project_include_dir}' to build environment CPPPATH. ---")

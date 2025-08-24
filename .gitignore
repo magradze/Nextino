@@ -4,3 +4,4 @@
 *.bak
 *.tmp
 build/
+extras/scripts/nextino_scripts/__pycache__/

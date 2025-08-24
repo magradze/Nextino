@@ -182,6 +182,13 @@ void SystemManager::begin(const char *configJson)
     {
         module->start();
     }
+
+    // --- PHASE 3.5: COMMAND REGISTRATION ---
+    Logger::getInstance().logf(LogLevel::Info, true, "SysManager", "Phase 3.5: Registering all module commands...");
+    for (auto *module : _modules)
+    {
+        module->registerCommands();
+    }
 }
 
 void SystemManager::loop()
